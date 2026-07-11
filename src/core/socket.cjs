@@ -1,0 +1,434 @@
+const fs = require('node:fs');
+const path = require('node:path');
+const {
+  default: makeWASocket,
+  useMultiFileAuthState,
+  makeCacheableSignalKeyStore,
+  fetchLatestBaileysVersion,
+  DisconnectReason,
+  Browsers,
+  downloadMediaMessage,
+  jidDecode
+} = require('@whiskeysockets/baileys');
+const { makeInMemoryStore } = require('./store.cjs');
+const { buildLogger } = require('./logger.cjs');
+const { createTtlCache } = require('./ttl-cache.cjs');
+const { createWaVersionCache } = require('./wa-version-cache.cjs');
+const { createOutboundQueue } = require('./outbound-queue.cjs');
+
+const RECONNECTABLE = new Set([
+  DisconnectReason.connectionClosed,
+  DisconnectReason.connectionLost,
+  DisconnectReason.restartRequired,
+  DisconnectReason.timedOut,
+  DisconnectReason.multideviceMismatch,
+  DisconnectReason.unavailableService
+]);
+const UNRECOVERABLE = new Set([DisconnectReason.loggedOut, DisconnectReason.badSession]);
+
+const DEFAULT_BACKOFFS_MS = [5000, 10000, 20000, 40000, 60000];
+const DEFAULT_MAX_RECONNECT_ATTEMPTS = 5;
+const DEFAULT_GROUP_METADATA_TTL = 5 * 60;
+const DEFAULT_GROUP_METADATA_MAX = 200;
+const DEFAULT_MIN_SEND_DELAY_MS = 1500;
+const DEFAULT_GLOBAL_MAX_PER_WINDOW = 30;
+const DEFAULT_WINDOW_MS = 60 * 1000;
+const PLATFORM_BROWSER = {
+  android: ['Ubuntu', 'Chrome', '22.04.4'],
+  iphone: ['Mac OS', 'Safari', '17.2'],
+  mac: ['Mac OS', 'Chrome', '124.0.0.0'],
+  desktop: ['Windows', 'Chrome', '124.0.0.0']
+};
+
+async function loadAuthState(sessionDir) {
+  fs.mkdirSync(sessionDir, { recursive: true });
+  return useMultiFileAuthState(sessionDir);
+}
+
+function buildSocketOptions({ version, state, logger, platform, msgRetryCounterCache, groupMetaCache, store }) {
+  const browser = PLATFORM_BROWSER[platform] || Browsers('Chrome');
+
+  return {
+    version,
+    auth: {
+      creds: state.creds,
+      keys: makeCacheableSignalKeyStore(state.keys, logger)
+    },
+    printQRInTerminal: false,
+    browser,
+    logger,
+    msgRetryCounterCache,
+    cachedGroupMetadata: async (jid) => {
+      return groupMetaCache.get(jid);
+    },
+    getMessage: async (key) => {
+      if (store) {
+        const msg = await store.loadMessage(key.remoteJid, key.id);
+        return msg?.message || undefined;
+      }
+      return undefined;
+    },
+    generateHighQualityLinkPreview: false,
+    syncFullHistory: false,
+    markOnlineOnConnect: false,
+    retryRequestDelayMs: 350
+  };
+}
+
+function createSocketManager({
+  sessionDir = path.join(process.cwd(), 'session'),
+  logger = buildLogger(),
+  groupMetadataTtl = DEFAULT_GROUP_METADATA_TTL,
+  groupMetadataMax = DEFAULT_GROUP_METADATA_MAX,
+  minSendDelayMs = DEFAULT_MIN_SEND_DELAY_MS,
+  globalMaxPerWindow = DEFAULT_GLOBAL_MAX_PER_WINDOW,
+  windowMs = DEFAULT_WINDOW_MS,
+  maxReconnectAttempts = DEFAULT_MAX_RECONNECT_ATTEMPTS,
+  reconnectBackoffsMs = DEFAULT_BACKOFFS_MS,
+  usePairingCode = false,
+  pairingNumber = '',
+  pairingPhoneCode = '',
+  platform = 'android',
+  onPairingCode = null,
+  onQr = null,
+  onConnectionUpdate = null,
+  onMessage = null,
+  signal = null
+} = {}) {
+  if (!Array.isArray(reconnectBackoffsMs) || reconnectBackoffsMs.length === 0) {
+    throw new Error('reconnectBackoffsMs must be a non-empty array');
+  }
+  if (typeof onMessage !== 'function') {
+    throw new Error('onMessage handler is required');
+  }
+
+  let sock = null;
+  let reconnectAttempts = 0;
+  let shutdownRequested = false;
+  let pairingRequested = false;
+  const versionCache = createWaVersionCache();
+
+  // Create persisted caches & store
+  const msgRetryCounterCache = createTtlCache({ ttlSeconds: 60 * 60 });
+  const groupMetaCache = createTtlCache({ ttlSeconds: groupMetadataTtl, maxKeys: groupMetadataMax });
+
+  const store = makeInMemoryStore({ logger });
+  const storePath = path.join(sessionDir, 'baileys_store.json');
+  try {
+    fs.mkdirSync(sessionDir, { recursive: true });
+    if (fs.existsSync(storePath)) {
+      store.readFromFile(storePath);
+    }
+  } catch (err) {
+    logger.error({ err: err.message }, 'Failed to read store file');
+  }
+
+  const storeInterval = setInterval(() => {
+    try {
+      store.writeToFile(storePath);
+    } catch (err) {
+      logger.error({ err: err.message }, 'Failed to write store file');
+    }
+  }, 15000);
+
+  const queue = createOutboundQueue({
+    minDelayMs: minSendDelayMs,
+    globalMaxPerWindow,
+    windowMs,
+    sendFn: async (jid, payload, options) => {
+      if (!sock) throw new Error('socket unavailable');
+      return sock.sendMessage(jid, payload, options);
+    },
+    logger: (msg) => logger.warn({ outbound: msg })
+  });
+
+  function pickBackoff() {
+    const idx = Math.min(reconnectAttempts, reconnectBackoffsMs.length - 1);
+    return reconnectBackoffsMs[idx];
+  }
+
+  function isReconnectable(reasonCode) {
+    if (reconnectAttempts >= maxReconnectAttempts) return false;
+    if (reasonCode === undefined || reasonCode === null) return true;
+    return RECONNECTABLE.has(reasonCode);
+  }
+
+  function isUnrecoverable(reasonCode) {
+    if (reasonCode === undefined || reasonCode === null) return false;
+    return UNRECOVERABLE.has(reasonCode);
+  }
+
+  function requestPairingIfNeeded() {
+    if (!usePairingCode || pairingRequested) return;
+    if (!sock || typeof sock.requestPairingCode !== 'function') return;
+    if (!/^\d{8,}$/.test(pairingNumber)) {
+      logger.warn({ pairingNumber }, 'usePairingCode is true but pairingNumber is empty or invalid. Skipping pairing code request (will fallback to QR if enabled).');
+      return;
+    }
+    pairingRequested = true;
+    // Delay pairing request slightly to allow socket to initialize
+    setTimeout(() => {
+      if (!sock || shutdownRequested) return;
+      sock.requestPairingCode(pairingNumber, pairingPhoneCode || undefined)
+        .then((code) => {
+          if (typeof onPairingCode === 'function') onPairingCode(code);
+          else console.log(`\n[bot] Pairing code: ${code}\n[bot] Masukkan kode ini di WhatsApp > Linked Devices > Link with phone number\n`);
+        })
+        .catch((error) => {
+          logger.warn({ err: error.message }, 'requestPairingCode failed');
+          pairingRequested = false; // Allow retry on next connection
+        });
+    }, 3000);
+  }
+
+  async function handleConnectionUpdate(update) {
+    const { connection, lastDisconnect, qr } = update;
+
+    if (qr && typeof onQr === 'function') {
+      onQr(qr);
+    }
+
+    // Request pairing code when creds are not yet registered (correct timing per docs)
+    if (connection === 'open') {
+      reconnectAttempts = 0;
+      logger.info('connection open');
+    }
+
+    if (update.qr === undefined && connection === 'connecting') {
+      // Pairing code mode: request when socket is ready, not on QR
+      if (usePairingCode && sock && !sock.authState.creds.registered) {
+        requestPairingIfNeeded();
+      }
+    }
+
+    if (typeof onConnectionUpdate === 'function') {
+      onConnectionUpdate(update);
+    }
+
+    if (connection === 'close') {
+      pairingRequested = false;
+      const reason = lastDisconnect?.error?.output?.statusCode;
+      if (shutdownRequested) return;
+
+      // Check if this is a 401 on an UNREGISTERED session (pairing not completed yet)
+      const isUnregistered = sock && !sock.authState?.creds?.registered;
+      if (reason === DisconnectReason.loggedOut && isUnregistered) {
+        // Not truly logged out — pairing was never completed.
+        // Clear session and restart fresh to get a new pairing code.
+        logger.warn('Pairing not completed — connection rejected. Clearing session and generating new pairing code...');
+        console.log('\n[bot] Pairing belum dikonfirmasi atau kode kadaluarsa. Menghapus sesi lama...\n');
+        try {
+          if (fs.existsSync(sessionDir)) {
+            const files = fs.readdirSync(sessionDir);
+            for (const file of files) {
+              if (file === '.wa-version-cache.json') continue;
+              const filePath = path.join(sessionDir, file);
+              try {
+                if (fs.lstatSync(filePath).isDirectory()) {
+                  fs.rmSync(filePath, { recursive: true, force: true });
+                } else {
+                  fs.unlinkSync(filePath);
+                }
+              } catch (_e) { /* ignore */ }
+            }
+          }
+        } catch (err) {
+          logger.error({ err: err.message }, 'Failed to clear session during unregistered reset');
+        }
+        reconnectAttempts = 0;
+        // Wait longer to avoid hammering WA servers
+        const waitUnreg = 8000;
+        logger.warn({ wait: waitUnreg }, 'Waiting before new pairing attempt...');
+        console.log(`[bot] Menunggu ${waitUnreg / 1000} detik sebelum mencoba pairing baru...\n`);
+        setTimeout(() => {
+          if (!shutdownRequested) start();
+        }, waitUnreg);
+        return;
+      }
+
+      if (isUnrecoverable(reason)) {
+        logger.warn({ reason }, 'Session unrecoverable (logged out or bad session). Clearing credentials folder and restarting...');
+        try {
+          if (fs.existsSync(sessionDir)) {
+            const files = fs.readdirSync(sessionDir);
+            for (const file of files) {
+              if (file === '.wa-version-cache.json') continue;
+              const filePath = path.join(sessionDir, file);
+              try {
+                if (fs.lstatSync(filePath).isDirectory()) {
+                  fs.rmSync(filePath, { recursive: true, force: true });
+                } else {
+                  fs.unlinkSync(filePath);
+                }
+              } catch (_e) { /* ignore */ }
+            }
+          }
+        } catch (err) {
+          logger.error({ err: err.message }, 'Failed to clear stale session directory');
+        }
+        reconnectAttempts = 0;
+        setTimeout(() => {
+          if (!shutdownRequested) start();
+        }, 1000);
+        return;
+      }
+      if (!isReconnectable(reason)) {
+        logger.warn({ reason, attempts: reconnectAttempts }, 'connect attempts exhausted');
+        return;
+      }
+      const wait = pickBackoff();
+      reconnectAttempts += 1;
+      logger.warn({ wait, reason, attempt: reconnectAttempts }, 'reconnecting after backoff');
+      setTimeout(() => {
+        if (!shutdownRequested) start();
+      }, wait);
+    }
+  }
+
+  async function start() {
+    if (shutdownRequested) return sock;
+    const { state, saveCreds } = await loadAuthState(sessionDir);
+    const versionEntry = await versionCache.get(fetchLatestBaileysVersion);
+    const resolvedVersion = versionEntry || (await fetchLatestBaileysVersion()).version;
+
+    sock = makeWASocket(buildSocketOptions({
+      version: resolvedVersion,
+      state,
+      logger,
+      platform,
+      msgRetryCounterCache,
+      groupMetaCache,
+      store
+    }));
+
+    sock.store = store;
+
+    // Wrap sendMessage to make all text outputs capitalized
+    const originalSendMessage = sock.sendMessage.bind(sock);
+    sock.sendMessage = async (jid, content, options) => {
+      if (content) {
+        if (typeof content.text === 'string') {
+          content.text = content.text.toUpperCase();
+        }
+        if (typeof content.caption === 'string') {
+          content.caption = content.caption.toUpperCase();
+        }
+      }
+      return originalSendMessage(jid, content, options);
+    };
+
+    // Custom helper methods for backward compatibility with older templates/plugins
+    sock.decodeJid = (jid) => {
+      if (!jid) return jid;
+      if (/:\d+@/gi.test(jid)) {
+        const decode = jidDecode(jid) || {};
+        return (decode.user && decode.server && decode.user + '@' + decode.server) || jid;
+      }
+      return jid;
+    };
+
+    sock.downloadAndSaveMediaMessage = async (message, filename) => {
+      const mtype = Object.keys(message.message || {})[0];
+      const content = message.message?.[mtype];
+      if (!content) return null;
+
+      const buffer = await downloadMediaMessage(
+        message,
+        'buffer',
+        {},
+        {
+          logger,
+          reuploadRequest: sock.updateMediaMessage
+        }
+      );
+
+      const extension = content.mimetype ? content.mimetype.split('/')[1] : 'bin';
+      const outputFilename = filename || path.join(process.cwd(), 'scratch', `${Date.now()}.${extension}`);
+
+      fs.mkdirSync(path.dirname(outputFilename), { recursive: true });
+      fs.writeFileSync(outputFilename, buffer);
+      return outputFilename;
+    };
+
+    // Bind store to event emitter
+    store.bind(sock.ev);
+
+    // Auto-cache groupMetadata when manually loaded
+    const originalGroupMetadata = sock.groupMetadata.bind(sock);
+    sock.groupMetadata = async (jid) => {
+      const cached = groupMetaCache.get(jid);
+      if (cached) return cached;
+      const metadata = await originalGroupMetadata(jid);
+      if (metadata) {
+        groupMetaCache.set(jid, metadata);
+      }
+      return metadata;
+    };
+
+    // Auto-update metadata cache on events
+    sock.ev.on('groups.update', async (groups) => {
+      for (const group of groups) {
+        const metadata = await sock.groupMetadata(group.id).catch(() => null);
+        if (metadata) groupMetaCache.set(group.id, metadata);
+      }
+    });
+
+    sock.ev.on('group-participants.update', async (event) => {
+      const metadata = await sock.groupMetadata(event.id).catch(() => null);
+      if (metadata) groupMetaCache.set(event.id, metadata);
+    });
+
+    sock.ev.on('creds.update', saveCreds);
+    sock.ev.on('connection.update', handleConnectionUpdate);
+    sock.ev.on('messages.upsert', ({ messages, type }) => {
+      if (!Array.isArray(messages)) return;
+      for (const message of messages) {
+        onMessage(sock, message, type);
+      }
+    });
+
+    // For pairing code mode, request only when creds are not yet registered
+    // (triggered from connection.update, not here directly)
+
+    return sock;
+  }
+
+  async function stop() {
+    shutdownRequested = true;
+    clearInterval(storeInterval);
+    queue.stop();
+    if (sock) {
+      try { sock.ws?.close(); } catch { /* ignore */ }
+      try { sock.end?.(); } catch { /* ignore */ }
+    }
+  }
+
+  function send(jid, payload, options) {
+    return queue.enqueue(jid, payload, options);
+  }
+
+  function getSocket() {
+    return sock;
+  }
+
+  if (signal) {
+    if (signal.aborted) shutdownRequested = true;
+    else signal.addEventListener('abort', () => { stop(); });
+  }
+
+  return { start, stop, send, getSocket, queue: { stats: () => queue.stats() } };
+}
+
+module.exports = {
+  createSocketManager,
+  RECONNECTABLE,
+  UNRECOVERABLE,
+  DEFAULT_BACKOFFS_MS,
+  DEFAULT_MAX_RECONNECT_ATTEMPTS,
+  DEFAULT_GROUP_METADATA_TTL,
+  DEFAULT_GROUP_METADATA_MAX,
+  DEFAULT_MIN_SEND_DELAY_MS,
+  DEFAULT_GLOBAL_MAX_PER_WINDOW,
+  DEFAULT_WINDOW_MS,
+  PLATFORM_BROWSER
+};
