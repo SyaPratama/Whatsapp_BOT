@@ -7,6 +7,13 @@ import path from 'node:path';
 
 const SEWA_DB_PATH = path.join(process.cwd(), 'data', 'sewa.json');
 const PRICE_PER_DAY = 3000;
+const priceTable = [
+  { hari: 1, harga: 3000 },
+  { hari: 5, harga: 8000 },
+  { hari: 7, harga: 10000 },
+  { hari: 14, harga: 20000 },
+  { hari: 30, harga: 42000 },
+];
 
 /**
  * Memuat database sewa dari file lokal.
@@ -45,6 +52,35 @@ function persist(globalState) {
  */
 function formatRupiah(num) {
   return 'RP ' + num.toLocaleString('id-ID');
+}
+
+/**
+ * Menghitung harga berdasarkan jumlah hari.
+ * Mengembalikan harga persis jika hari ada di priceTable,
+ * atau hasil interpolasi/ekstrapolasi linear dari dua titik terdekat
+ * jika tidak, dibulatkan ke ribuan terdekat (sisa >= 500 naik, < 500 turun).
+ *
+ * @param {number} hari - Jumlah hari sewa/paket
+ * @returns {number} Harga dalam rupiah
+ */
+function hitungHarga(hari) {
+  const exact = priceTable.find(p => p.hari === hari);
+  if (exact) return exact.harga;
+
+  let a, b;
+  if (hari < priceTable[0].hari) {
+    [a, b] = [priceTable[0], priceTable[1]];
+  } else if (hari > priceTable.at(-1).hari) {
+    [a, b] = [priceTable.at(-2), priceTable.at(-1)];
+  } else {
+    const i = priceTable.findIndex(p => p.hari > hari);
+    [a, b] = [priceTable[i - 1], priceTable[i]];
+  }
+
+  const tarifPerHari = (b.harga - a.harga) / (b.hari - a.hari);
+  const harga = a.harga + tarifPerHari * (hari - a.hari);
+
+  return Math.round(harga / 1000) * 1000;
 }
 
 /**
@@ -194,7 +230,7 @@ export async function handleSewaCommand(ctx) {
             customer
           });
 
-          const harga = PRICE_PER_DAY * days;
+          const harga = hitungHarga(days);
           const label = result.isExtend ? 'PERPANJANGAN SEWA' : 'SEWA BOT DITAMBAHKAN';
 
           return reply(`✅ *${label}*
@@ -239,11 +275,11 @@ _AKSES PRO SUDAH AKTIF._`);
 📦 MINIMAL: *1 HARI*
 
 CONTOH HARGA:
- • 1 HARI  = ${formatRupiah(PRICE_PER_DAY * 1)}
- • 3 HARI  = ${formatRupiah(PRICE_PER_DAY * 3)}
- • 7 HARI  = ${formatRupiah(PRICE_PER_DAY * 7)}
- • 14 HARI = ${formatRupiah(PRICE_PER_DAY * 14)}
- • 30 HARI = ${formatRupiah(PRICE_PER_DAY * 30)}
+ • 1 HARI  = ${formatRupiah(hitungHarga(1))}
+ • 3 HARI  = ${formatRupiah(hitungHarga(3))}
+ • 7 HARI  = ${formatRupiah(hitungHarga(7))}
+ • 14 HARI = ${formatRupiah(hitungHarga(14))}
+ • 30 HARI = ${formatRupiah(hitungHarga(30))}
 
 CARA ORDER:
 .${command} <jumlah_hari>
