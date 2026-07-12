@@ -119,17 +119,22 @@ async function main() {
     const credsPath = path.join(sessionDir, 'creds.json');
 
     let alreadyRegistered = false;
+    let registeredNumber = '';
     try {
       const creds = JSON.parse(fs.readFileSync(credsPath, 'utf8'));
       alreadyRegistered = creds.registered === true;
+      if (creds.me && creds.me.id) {
+        registeredNumber = normalizePhoneNumber(creds.me.id.split(':')[0].split('@')[0]);
+      }
     } catch {
     }
 
+    const configNumber = normalizePhoneNumber(global.pairingNumber || '');
+
     if (alreadyRegistered) {
       console.log('[bot] Sesi aktif ditemukan, langsung terhubung...');
-      pairingNumber = '';
+      pairingNumber = registeredNumber || configNumber;
     } else {
-      const configNumber = normalizePhoneNumber(global.pairingNumber || '');
       if (isValidPhoneNumber(configNumber)) {
         pairingNumber = configNumber;
         console.log(`[bot] Menggunakan nomor dari config: ${pairingNumber}`);

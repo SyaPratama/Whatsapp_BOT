@@ -24,7 +24,12 @@ const RECONNECTABLE = new Set([
   DisconnectReason.multideviceMismatch,
   DisconnectReason.unavailableService
 ]);
-const UNRECOVERABLE = new Set([DisconnectReason.loggedOut, DisconnectReason.badSession]);
+// 440 = connectionReplaced (conflict) — JANGAN reconnect otomatis, hentikan proses
+const UNRECOVERABLE = new Set([
+  DisconnectReason.loggedOut,
+  DisconnectReason.badSession,
+  DisconnectReason.connectionReplaced
+]);
 
 const DEFAULT_BACKOFFS_MS = [5000, 10000, 20000, 40000, 60000];
 const DEFAULT_MAX_RECONNECT_ATTEMPTS = 5;
@@ -246,6 +251,14 @@ function createSocketManager({
         return;
       }
 
+      // 440 conflict: ada instance lain yang aktif — hentikan tanpa hapus session
+      if (reason === DisconnectReason.connectionReplaced) {
+        console.log('\n[bot] ⚠️  CONFLICT (440): Bot lain sedang aktif dengan akun yang sama.');
+        console.log('[bot] ⛔ Koneksi dihentikan. Tutup semua instance lain lalu jalankan ulang.\n');
+        shutdownRequested = true;
+        return;
+      }
+
       if (isUnrecoverable(reason)) {
         logger.warn({ reason }, 'Session unrecoverable (logged out or bad session). Clearing credentials folder and restarting...');
         try {
@@ -267,11 +280,14 @@ function createSocketManager({
           logger.error({ err: err.message }, 'Failed to clear stale session directory');
         }
         reconnectAttempts = 0;
+        pairingRequested = false;
+        console.log('[bot] Sesi dihapus. Memulai ulang untuk mendapatkan pairing code baru...');
         setTimeout(() => {
           if (!shutdownRequested) start();
-        }, 1000);
+        }, 3000);
         return;
       }
+
       if (!isReconnectable(reason)) {
         logger.warn({ reason, attempts: reconnectAttempts }, 'connect attempts exhausted');
         return;
@@ -316,6 +332,9 @@ function createSocketManager({
       }
       return originalSendMessage(jid, content, options);
     };
+
+    /** Kirim pesan tanpa konversi uppercase — dipakai untuk interactive list/button */
+    sock.sendRaw = originalSendMessage;
 
     // Custom helper methods for backward compatibility with older templates/plugins
     sock.decodeJid = (jid) => {
