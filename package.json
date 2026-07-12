@@ -1,6 +1,6 @@
 {
   "name": "Bot Whatsapp Zoee",
-  "version": "5.0",
+  "version": "1.0.0",
   "description": "Bot Whatsapp Zoee (Baileys WhatsApp bot - default pairing code auth, Android fingerprint)",
   "main": "main.js",
   "type": "commonjs",
