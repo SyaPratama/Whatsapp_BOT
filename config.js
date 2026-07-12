@@ -1,7 +1,7 @@
 const fs = require('fs')
 
-global.owner = ['6285591386135']
-global.namaown = 'Tama'
+global.owner = ['6287796752356']
+global.namaown = 'Zoee'
 global.prefa = ['', '!', '.', ',']
 global.thumbnail = 'https://athars.space/uploads/3fad0629.jpeg'
 global.idch = '120363407591116463@newsletter'

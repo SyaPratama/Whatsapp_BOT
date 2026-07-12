@@ -1,5 +1,7 @@
 'use strict';
 
+const { loadOwners } = require('./utils/owner-loader.cjs');
+
 // ─── Prefix detection ──────────────────────────────────────────────────────────
 function detectPrefix(body) {
   const prefixRegex = /^[°zZ#$@*+,.?=''():√%!¢£¥€π¤ΠΦ_&><`™©®Δ^βα~¦|/\\©^]/;
@@ -24,25 +26,10 @@ async function buildContext({ sock, m, globalState, deps }) {
 
   const fs = require('node:fs');
   const path = require('node:path');
-  const loadOwnersFresh = () => {
-    const ownerPath = path.join(process.cwd(), 'data', 'owner.json');
-    try {
-      const raw = JSON.parse(fs.readFileSync(ownerPath, 'utf8'));
-      const list = Array.isArray(raw) ? raw : (raw && Array.isArray(raw.owner)) ? raw.owner : [];
-      const formatted = list.map(o => {
-        if (typeof o === 'string') return { nomor: o.replace(/[^0-9]/g, ''), nama: o === '6285591386135' ? 'Tama' : 'Owner' };
-        return { nomor: String(o.nomor || '').replace(/[^0-9]/g, ''), nama: o.nama || 'Owner' };
-      }).filter(o => o.nomor);
-      return formatted.length > 0 ? formatted : [{ nomor: '6285591386135', nama: 'Tama' }];
-    } catch {
-      return [{ nomor: '6285591386135', nama: 'Tama' }];
-    }
-  };
-
-  const owners = loadOwnersFresh();
+  const owners = loadOwners({ cwd: process.cwd() });
   globalState.ownerData = owners;
-  globalState.owner = owners.map(o => o.nomor);
-  globalState.namaown = owners[0]?.nama || 'Owner';
+  globalState.owner = owners.map((o) => o.nomor);
+  globalState.namaown = owners[0]?.nama || '';
 
   const botNumber   = await Promise.resolve(sock.decodeJid(sock.user.id));
   const ownerList   = globalState.owner.map((v) => v + '@s.whatsapp.net');

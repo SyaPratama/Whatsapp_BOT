@@ -16,7 +16,13 @@ function createVipStore(filePath = DEFAULT_VIP_FILE) {
 
     try {
       const raw = fs.readFileSync(filePath, 'utf8');
-      cache = raw.trim() ? JSON.parse(raw) : {};
+      const trimmed = raw.trim();
+      if (!trimmed) {
+        cache = {};
+        return cache;
+      }
+      const parsed = JSON.parse(trimmed);
+      cache = (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : {};
     } catch (error) {
       cache = {};
       fs.writeFileSync(filePath, JSON.stringify(cache, null, 2));
