@@ -1,1 +1,0 @@
-﻿config loaded ok, usePairingCode=true pairingNumber="" platform=android

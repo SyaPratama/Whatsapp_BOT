@@ -67,7 +67,7 @@ function generateOrderId(days) {
  * @param {string} params.addedBy - JID pengirim/owner yang menambahkan
  * @returns {Object} Detail hasil penambahan sewa
  */
-function addSewa(globalState, { userJid, days, addedBy }) {
+function addSewa(globalState, { userJid, days, addedBy, customer }) {
   if (!globalState.sewaDb) globalState.sewaDb = loadSewaDb();
   const existing = globalState.sewaDb[userJid];
   let baseDate = new Date();
@@ -90,6 +90,7 @@ function addSewa(globalState, { userJid, days, addedBy }) {
     lastTopup: Date.now(),
     lastTopupDays: days,
     addedBy: addedBy || 'owner',
+    customer: customer || existing?.customer || '',
     warned: false
   };
   persist(globalState);
@@ -161,18 +162,28 @@ export async function handleSewaCommand(ctx) {
       if (isOwner && ['add', 'remove', 'list'].includes(sub)) {
         if (sub === 'add') {
           const mentioned = m.mentionedJid || [];
-          const targetJid = mentioned[0] || args[1];
+          let targetJid = mentioned[0] || args[1];
           const daysArg = mentioned.length ? args[1] : args[2];
           const days = parseInt(daysArg, 10);
+          const customer = (args.slice(mentioned.length ? 2 : 3).join(' ') || '').trim();
 
           if (!targetJid || Number.isNaN(days) || days < 1) {
             return reply('FORMAT: .sewa add @user <hari>\nCONTOH: .sewa add @628xxx 7');
           }
 
+          if (typeof targetJid === 'string' && /^https?:\/\//i.test(targetJid)) {
+            try {
+              targetJid = await sock.groupAcceptInvite(targetJid);
+            } catch (err) {
+              return reply('Gagal join grup dari invite link.');
+            }
+          }
+
           const result = addSewa(globalState, {
             userJid: targetJid,
             days,
-            addedBy: m.sender
+            addedBy: m.sender,
+            customer
           });
 
           const harga = PRICE_PER_DAY * days;
