@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const SEWA_DB_PATH = path.join(process.cwd(), 'data', 'sewa.json');
-const PRICE_PER_DAY = Math.ceil(10380 / 7);
+const PRICE_PER_DAY = 3000;
 
 /**
  * Memuat database sewa dari file lokal.
