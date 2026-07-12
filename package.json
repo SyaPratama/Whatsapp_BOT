@@ -11,7 +11,7 @@
     "mobile": "node main.js",
     "dev": "node main.js"
   },
-  "author": "Fierlyy D arkanee",
+  "author": "Rasya Putra Pratama",
   "license": "MIT",
   "dependencies": {
     "@babel/core": "^7.29.0",
