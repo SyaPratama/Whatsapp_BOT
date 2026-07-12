@@ -13,6 +13,7 @@ Bot WhatsApp berbasis **Node.js** yang dibangun di atas [@whiskeysockets/baileys
 - [Fitur](#fitur)
 - [Persyaratan](#persyaratan)
 - [Instalasi](#instalasi)
+- [Instalasi di Termux (Android)](#instalasi-di-termux-android)
 - [Konfigurasi](#konfigurasi)
 - [Menjalankan Bot](#menjalankan-bot)
 - [Autentikasi](#autentikasi)
@@ -80,6 +81,156 @@ Bot WhatsApp berbasis **Node.js** yang dibangun di atas [@whiskeysockets/baileys
    ```bash
    npm start
    ```
+
+---
+
+## Instalasi di Termux (Android)
+
+Panduan lengkap untuk menjalankan bot di **HP Android** via Termux.
+
+### 1. Install Termux
+
+1. Buka [F-Droid](https://f-droid.org/) atau [GitHub releases Termux](https://github.com/termux/termux-app/releases).
+2. **Jangan** install dari Play Store (sudah outdated).
+3. Download APK versi terbaru (`>= 0.118`) lalu install.
+4. Buka Termux, tunggu proses inisialisasi pertama kali selesai.
+
+### 2. Update & Upgrade Repo
+
+```bash
+pkg update -y && pkg upgrade -y
+```
+
+### 3. Install Git
+
+```bash
+pkg install git -y
+```
+
+Verifikasi:
+
+```bash
+git --version
+```
+
+### 4. Install Node.js (LTS)
+
+Termux sudah menyediakan package `nodejs` (build resmi, bukan dari nvm):
+
+```bash
+pkg install nodejs -y
+```
+
+Verifikasi versi (pastikan **>= 18**):
+
+```bash
+node --version
+npm --version
+```
+
+> Jika versi Node.js < 18, install manual via `nvm`:
+>
+> ```bash
+> pkg install curl -y
+> curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+> source ~/.bashrc
+> nvm install --lts
+> nvm use --lts
+> ```
+
+### 5. Install Dependency Pendukung (opsional tapi disarankan)
+
+```bash
+pkg install python make clang libffi openssl -y
+```
+
+> Diperlukan untuk native module seperti `jimp`, `canvas`, dan `file-type` saat build.
+
+### 6. Izinkan Akses Storage (untuk baca/tulis file)
+
+```bash
+termux-setup-storage
+```
+
+Akan muncul popup Android — izinkan akses storage.
+
+### 7. Clone Repository
+
+```bash
+cd ~
+git clone https://github.com/SyaPratama/Whatsapp_BOT.git
+cd Whatsapp_BOT
+```
+
+### 8. Install Dependency NPM
+
+```bash
+npm install
+```
+
+> **Tips**: jika `npm install` gagal di module tertentu (umumnya `jimp` atau `canvas`), jalankan:
+>
+> ```bash
+> pkg install python make clang libffi openssl -y
+> npm config set python $(which python)
+> npm install --build-from-source
+> ```
+
+### 9. (Opsional) Edit Konfigurasi
+
+```bash
+nano config.js
+```
+
+> Simpan: `Ctrl+O` → `Enter` → keluar: `Ctrl+X`.
+
+### 10. Jalankan Bot
+
+```bash
+npm start
+```
+
+Bot akan meminta nomor WhatsApp untuk pairing. Masukkan nomor, lalu masukkan **pairing code** di WhatsApp HP kamu (Linked Devices → Link with phone number).
+
+### 11. Jalankan di Background (agar tidak mati saat Termux ditutup)
+
+Gunakan [`tmux`](https://github.com/tmux/tmux) (disarankan) atau `nohup`:
+
+**Cara 1 — tmux (disarankan):**
+
+```bash
+pkg install tmux -y
+
+tmux new -s botwa
+npm start
+```
+
+> Keluar dari session tanpa mematikan bot: `Ctrl+B` lalu tekan `D`.
+> Kembali ke session: `tmux attach -t botwa`.
+
+**Cara 2 — nohup:**
+
+```bash
+nohup npm start > bot.log 2>&1 &
+```
+
+> Lihat log: `tail -f bot.log`.
+> Hentikan bot: `pkill -f "node main.js"`.
+
+### 12. Mencegah Termux Mati Otomatis
+
+- Buka **Settings Android** → **Apps** → **Termux** → **Battery** → set ke **Unrestricted**.
+- Di Termux, jalankan:
+  ```bash
+  termux-wake-lock
+  ```
+- Atau gunakan plugin **Termux:Boot** + **Termux:Tasker** agar bot auto-start saat HP nyala.
+
+### Catatan Penting Termux
+
+- Jangan **swipe-kill** Termux dari recent apps (bot akan mati).
+- Hindari **battery saver mode** — Android akan membunuh proses background.
+- Jika sering dapat **"session not found"**, hapus `session/creds.json` lalu pairing ulang.
 
 ---
 
