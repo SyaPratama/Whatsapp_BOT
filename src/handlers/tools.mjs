@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { jidNormalizedUser } from '@whiskeysockets/baileys';
 
 function safeUnlink(target) {
   try { fs.unlinkSync(target); } catch { /* ignore */ }
@@ -155,11 +156,30 @@ export async function handleToolsCommand(ctx) {
 
     case 'setpp': {
       if (!m.isGroup) return reply('❌ Fitur ini hanya bisa digunakan di grup.');
-      if (!isBotAdmins) return reply('❌ Bot harus menjadi admin grup.');
+      
+      let isBotGroupAdmin = false;
+      try {
+        const metadata = await sock.groupMetadata(m.chat);
+        const botJid = jidNormalizedUser(sock.user.id);
+        const botLid = sock.authState?.creds?.me?.lid ? jidNormalizedUser(sock.authState.creds.me.lid) : null;
+        
+        const botEntry = metadata.participants.find(p => p.id === botJid || (botLid && p.id === botLid));
+        if (botEntry && (botEntry.admin === 'admin' || botEntry.admin === 'superadmin')) {
+          isBotGroupAdmin = true;
+        }
+      } catch (error) {
+        console.error("Gagal mendapatkan data grup:", error);
+      }
+
+      if (!isBotGroupAdmin) return reply('❌ Bot harus menjadi admin grup.');
+
       const source = m.quoted ? m.quoted : m;
       const mime = (source.msg || source).mimetype || '';
       if (!/image/.test(mime)) return reply('❌ Reply foto yang ingin dijadikan PP grup!');
-      const media = await source.download();
+      const mediaPath = await source.download();
+      if (!mediaPath) return reply('❌ Gagal mengunduh gambar.');
+      const media = fs.readFileSync(mediaPath);
+      safeUnlink(mediaPath);
       try {
         await sock.updateProfilePicture(m.chat, media);
         await sock.sendMessage(m.chat, { react: { text: '✅', key: m.key } });

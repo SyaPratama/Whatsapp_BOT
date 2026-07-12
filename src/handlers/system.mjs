@@ -1,26 +1,61 @@
 function buildOwnerText(globalState) {
-  return `👑 *OWNER BOT*\n\n► Nama: ${globalState.namaown || 'Owner'}\n► WhatsApp: wa.me/${globalState.owner?.[0] || ''}\n\n_Hubungi untuk pembelian script atau sewa bot._`;
+  let text = `👑 *DAFTAR OWNER BOT*\n\n► Nama: ${globalState.namaown || 'Owner'}\n`;
+  if (globalState.owner && globalState.owner.length > 0) {
+    globalState.owner.forEach((item, index) => {
+      text += `► WhatsApp ${index + 1}: wa.me/${item.replace(/[^0-9]/g, '')}\n`;
+    });
+  }
+  text += `\n_Hubungi salah satu owner di atas untuk pembelian script atau sewa bot._`;
+  return text;
 }
 
 export async function handleSystemCommand(ctx) {
-  const { command, reply, sock, m, isOwner, isOwn, isPremium, args, text, globalState, runtime, loadVIP, isVIP, addVIP, delVIP } = ctx;
+  const { command, reply, sock, m, isOwner, isOwn, args, text, globalState, runtime, loadVIP, isVIP, addVIP, delVIP, botNumber } = ctx;
 
   switch (command) {
     case 'owner':
     case 'own':
     case 'dev':
     case 'developerbot': {
-      const ownerJid = `${globalState.owner?.[0] || ''}@s.whatsapp.net`;
-      const vcard = `BEGIN:VCARD\nVERSION:3.0\nFN:${globalState.namaown || 'Owner'}\nORG:Owner Bot;\nTEL;type=CELL;type=VOICE;waid=${globalState.owner?.[0] || ''}:${globalState.owner?.[0] || ''}\nEND:VCARD`;
+      const contacts = (globalState.owner || []).map((item, index) => {
+        const num = item.replace(/[^0-9]/g, '');
+        const name = index === 0 ? (globalState.namaown || 'Owner Utama') : `Owner Tambahan ${index}`;
+        return {
+          vcard: `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nORG:Owner Bot;\nTEL;type=CELL;type=VOICE;waid=${num}:${num}\nEND:VCARD`
+        };
+      });
 
-      await sock.sendMessage(m.chat, {
-        contacts: {
-          displayName: `${globalState.namaown || 'Owner'}`,
-          contacts: [{ vcard }]
+      if (contacts.length > 0) {
+        await sock.sendMessage(m.chat, {
+          contacts: {
+            displayName: `${globalState.namaown || 'Owner'} List`,
+            contacts
+          }
+        }, { quoted: m });
+      }
+
+      const ownerJids = (globalState.owner || []).map((v) => `${v.replace(/[^0-9]/g, '')}@s.whatsapp.net`);
+      await sock.sendMessage(m.chat, { text: buildOwnerText(globalState), mentions: [m.sender, ...ownerJids] }, { quoted: m });
+      return true;
+    }
+
+    case 'cekowner':
+    case 'checkowner': {
+      if (!globalState.owner || globalState.owner.length < 1) {
+        return reply('Belum ada owner yang terdaftar.');
+      }
+      let teks = `👑 *DAFTAR OWNER BOT*\n\n`;
+      teks += `► Owner Utama: @${globalState.owner[0].split('@')[0]}\n`;
+      if (globalState.owner.length > 1) {
+        teks += `► Owner Tambahan:\n`;
+        for (let i = 1; i < globalState.owner.length; i++) {
+          const item = globalState.owner[i];
+          teks += `  - @${item.split('@')[0]}\n`;
         }
-      }, { quoted: m });
-
-      await sock.sendMessage(m.chat, { text: buildOwnerText(globalState), mentions: [m.sender] }, { quoted: m });
+      }
+      teks += `\n_Hubungi owner untuk keperluan sewa bot atau pembelian script._`;
+      const ownerJids = globalState.owner.map((v) => `${v.replace(/[^0-9]/g, '')}@s.whatsapp.net`);
+      await sock.sendMessage(m.chat, { text: teks, mentions: ownerJids }, { quoted: m });
       return true;
     }
 
@@ -44,23 +79,63 @@ export async function handleSystemCommand(ctx) {
 
     case 'addvip': {
       if (!isOwner) return reply('❌ Hanya owner.');
+      
+      const quotedSender = m.quoted?.sender;
+      const cleanQuoted = quotedSender ? sock.decodeJid(quotedSender) : null;
+      const botLid = sock.authState?.creds?.me?.lid ? sock.decodeJid(sock.authState.creds.me.lid) : null;
+      const isQuotedFromBot = m.quoted?.fromMe 
+        || (cleanQuoted === botNumber) 
+        || (botLid && cleanQuoted === botLid);
+      
+      let targetJid = m.mentionedJid?.[0] || (m.quoted && !isQuotedFromBot ? m.quoted.sender : null);
+      
       const parts = text.trim().split(/\s+/);
-      if (parts.length < 2) return reply('Format: .addvip 628xxxxxx 30\nContoh: .addvip 6281234567890 7');
-      const number = parts[0].replace(/[^0-9]/g, '');
-      const days = parseInt(parts[1], 10);
-      if (!number) return reply('Nomor tidak valid.');
-      if (Number.isNaN(days) || days <= 0) return reply('Jumlah hari harus angka positif.');
-      addVIP(`${number}@s.whatsapp.net`, days);
-      reply(`✅ VIP ditambahkan untuk +${number} selama ${days} hari.`);
+      let days = parseInt(parts[parts.length - 1], 10);
+      
+      if (!targetJid && parts[0]) {
+        const cleanNum = parts[0].replace(/[^0-9]/g, '');
+        if (cleanNum.length >= 5) {
+          targetJid = `${cleanNum}@s.whatsapp.net`;
+        }
+      }
+
+      if (!targetJid || Number.isNaN(days) || days <= 0) {
+        return reply('❌ Format tidak sesuai!\n*Gunakan:* .addvip [nomor/tag/reply] [hari]\n*Contoh:* .addvip 6281234567890 30');
+      }
+      
+      const targetNum = targetJid.split('@')[0];
+      addVIP(targetJid, days);
+      reply(`✅ VIP ditambahkan untuk +${targetNum} selama ${days} hari.`);
       return true;
     }
 
     case 'delvip': {
       if (!isOwner) return reply('❌ Hanya owner.');
-      const number = text.replace(/[^0-9]/g, '');
-      if (!number) return reply('Masukkan nomor yang akan dihapus VIP.\nContoh: .delvip 6281234567890');
-      delVIP(`${number}@s.whatsapp.net`);
-      reply(`✅ VIP untuk +${number} dihapus.`);
+      
+      const quotedSender = m.quoted?.sender;
+      const cleanQuoted = quotedSender ? sock.decodeJid(quotedSender) : null;
+      const botLid = sock.authState?.creds?.me?.lid ? sock.decodeJid(sock.authState.creds.me.lid) : null;
+      const isQuotedFromBot = m.quoted?.fromMe 
+        || (cleanQuoted === botNumber) 
+        || (botLid && cleanQuoted === botLid);
+      
+      let targetJid = m.mentionedJid?.[0] || (m.quoted && !isQuotedFromBot ? m.quoted.sender : null);
+      
+      const parts = text.trim().split(/\s+/);
+      if (!targetJid && parts[0]) {
+        const cleanNum = parts[0].replace(/[^0-9]/g, '');
+        if (cleanNum.length >= 5) {
+          targetJid = `${cleanNum}@s.whatsapp.net`;
+        }
+      }
+
+      if (!targetJid) {
+        return reply('❌ Format tidak sesuai!\n*Gunakan:* .delvip [nomor/tag/reply]\n*Contoh:* .delvip 6281234567890');
+      }
+      
+      const targetNum = targetJid.split('@')[0];
+      delVIP(targetJid);
+      reply(`✅ VIP untuk +${targetNum} dihapus.`);
       return true;
     }
 

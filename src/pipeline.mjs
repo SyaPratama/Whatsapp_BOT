@@ -32,8 +32,15 @@ async function buildContext({ sock, m, globalState, deps }) {
   const botNumber   = await Promise.resolve(sock.decodeJid(sock.user.id));
   const ownerList   = (globalState.owner || []).map((v) => v.replace(/[^0-9]/g, '') + '@s.whatsapp.net');
   const kontributor = deps.contributors || [];
-  const isOwner     = [botNumber, ...kontributor, ...ownerList].includes(m.sender);
-  const isPremium   = (deps.premium || []).includes(m.sender);
+  let cleanSender = m.sender ? (m.sender.split(':')[0].split('@')[0] + '@s.whatsapp.net') : '';
+  if (m.sender && m.sender.endsWith('@lid') && sock.store?.contacts) {
+    const contactsList = sock.store.contacts.values ? Array.from(sock.store.contacts.values()) : Object.values(sock.store.contacts);
+    const contact = contactsList.find((c) => c.lid === m.sender);
+    if (contact && contact.id && contact.id.endsWith('@s.whatsapp.net')) {
+      cleanSender = contact.id;
+    }
+  }
+  const isOwner     = [botNumber, ...kontributor, ...ownerList].includes(cleanSender);
 
   // Group metadata — uses cached version if available
   let groupMetadata = {};
@@ -71,7 +78,6 @@ async function buildContext({ sock, m, globalState, deps }) {
     isCmd,
     isOwner,
     isOwn: isOwner,
-    isPremium,
     isGroup,
     isPrivate,
     isAdmins,
@@ -110,7 +116,15 @@ async function buildContext({ sock, m, globalState, deps }) {
 async function isOwnerCheck(sock, m, deps) {
   const botNumber = await Promise.resolve(sock.decodeJid(sock.user.id));
   const ownerList = (deps.globalState?.owner || []).map((v) => `${v.replace(/[^0-9]/g, '')}@s.whatsapp.net`);
-  return [botNumber, ...ownerList, ...(deps.contributors || [])].includes(m.sender);
+  let cleanSender = m.sender ? (m.sender.split(':')[0].split('@')[0] + '@s.whatsapp.net') : '';
+  if (m.sender && m.sender.endsWith('@lid') && sock.store?.contacts) {
+    const contactsList = sock.store.contacts.values ? Array.from(sock.store.contacts.values()) : Object.values(sock.store.contacts);
+    const contact = contactsList.find((c) => c.lid === m.sender);
+    if (contact && contact.id && contact.id.endsWith('@s.whatsapp.net')) {
+      cleanSender = contact.id;
+    }
+  }
+  return [botNumber, ...ownerList, ...(deps.contributors || [])].includes(cleanSender);
 }
 
 // ─── Main entry point per Baileys docs: messages.upsert ───────────────────────
@@ -131,6 +145,18 @@ export async function processMessage(sock, m, deps) {
   if (globalState.self && !(await isOwnerCheck(sock, m, deps))) return;
 
   const ctx = await buildContext({ sock, m, globalState, deps });
+  
+  const defaultPlaceholders = [
+    '[template]', '[hasil]', '[nama]', '[nom]', '[nominal]', 
+    '[n1]', '[n2]', '[jml]', '[hari]', '[nomor]', 
+    '[@tag]', '[psn]', '[adm|hp|roll|...]'
+  ];
+  const bodyLower = (ctx.body || '').toLowerCase();
+  const hasPlaceholder = defaultPlaceholders.some(p => bodyLower.includes(p));
+
+  if (ctx.isCmd && hasPlaceholder) {
+    return ctx.reply('⚠️ *PERINGATAN:* Harap ganti parameter di dalam kurung seperti *[nama]* atau *[nominal]* dengan nilai asli Anda!\n\n*Contoh:* jika menu tertulis \`.depo [nama] [nominal]\`, ketiklah \`.depo budi 50000\`');
+  }
   const handled = await dispatchCommand(ctx);
   if (!handled) {
     await processClaim(

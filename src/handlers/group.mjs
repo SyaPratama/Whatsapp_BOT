@@ -3,7 +3,7 @@ function normalizeParticipantId(participant) {
 }
 
 export async function handleGroupCommand(ctx) {
-  const { command, reply, sock, m, isGroup, isAdmins, isOwner, isBotAdmins, q, args, participants, globalState } = ctx;
+  const { command, reply, sock, m, isGroup, isAdmins, isOwner, isBotAdmins, q, args, participants, globalState, botNumber } = ctx;
 
   switch (command) {
     case 'demote':
@@ -12,10 +12,24 @@ export async function handleGroupCommand(ctx) {
       if (!isAdmins && !isOwner) return reply('❌ Hanya admin grup.');
       if (!isBotAdmins) return reply('❌ Bot harus menjadi admin grup.');
 
-      const target = m.mentionedJid?.[0] || m.quoted?.sender || `${q.replace(/[^0-9]/g, '')}@s.whatsapp.net`;
+      const quotedSender = m.quoted?.sender;
+      const isQuotedFromBot = m.quoted?.fromMe || (quotedSender && sock.decodeJid(quotedSender) === botNumber);
+      let targetJid = m.mentionedJid?.[0] || (m.quoted && !isQuotedFromBot ? m.quoted.sender : null);
+      
+      if (!targetJid && q) {
+        const cleanNum = q.replace(/[^0-9]/g, '');
+        if (cleanNum.length >= 5) {
+          targetJid = `${cleanNum}@s.whatsapp.net`;
+        }
+      }
+
+      if (!targetJid || targetJid.replace(/[^0-9]/g, '').length < 5) {
+        return reply(`❌ Format tidak sesuai!\nGunakan: .${command} [nomor/tag/reply]`);
+      }
+
       const action = command === 'demote' ? 'demote' : 'promote';
-      await sock.groupParticipantsUpdate(m.chat, [target], action);
-      await sock.sendMessage(m.chat, { text: `Sukses ${action} @${target.split('@')[0]}`, mentions: [target] }, { quoted: m });
+      await sock.groupParticipantsUpdate(m.chat, [targetJid], action);
+      await sock.sendMessage(m.chat, { text: `Sukses ${action} @${targetJid.split('@')[0]}`, mentions: [targetJid] }, { quoted: m });
       return true;
     }
 
@@ -24,8 +38,22 @@ export async function handleGroupCommand(ctx) {
       if (!isAdmins && !isOwner) return reply('Khusus Admin!!');
       if (!isBotAdmins) return reply('_Bot Harus Menjadi Admin Terlebih Dahulu_');
 
-      const users = m.mentionedJid?.[0] || m.quoted?.sender || `${q.replace(/[^0-9]/g, '')}@s.whatsapp.net`;
-      await sock.groupParticipantsUpdate(m.chat, [users], 'remove');
+      const quotedSender = m.quoted?.sender;
+      const isQuotedFromBot = m.quoted?.fromMe || (quotedSender && sock.decodeJid(quotedSender) === botNumber);
+      let targetJid = m.mentionedJid?.[0] || (m.quoted && !isQuotedFromBot ? m.quoted.sender : null);
+      
+      if (!targetJid && q) {
+        const cleanNum = q.replace(/[^0-9]/g, '');
+        if (cleanNum.length >= 5) {
+          targetJid = `${cleanNum}@s.whatsapp.net`;
+        }
+      }
+
+      if (!targetJid || targetJid.replace(/[^0-9]/g, '').length < 5) {
+        return reply(`❌ Format tidak sesuai!\nGunakan: .kick [nomor/tag/reply]`);
+      }
+
+      await sock.groupParticipantsUpdate(m.chat, [targetJid], 'remove');
       return reply('*[ Done ]*');
     }
 

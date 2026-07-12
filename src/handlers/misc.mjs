@@ -86,73 +86,76 @@ export async function handleMiscCommand(ctx) {
         {
           title: '🎶 UTAMA — Sistem Taruhan',
           rows: [
-            { title: '.openlw', rowId: 'cmd_openlw', description: 'Buka sesi taruhan baru' },
-            { title: '.resetlw', rowId: 'cmd_resetlw', description: 'Reset/hapus sesi LW' },
-            { title: '.k / .b', rowId: 'cmd_kb', description: 'Input taruhan K atau B (fee 10%)' },
-            { title: '.wk / .wb', rowId: 'cmd_wkwb', description: 'Input taruhan perak (fee bertingkat)' },
-            { title: '.cbl', rowId: 'cmd_cbl', description: 'Cek balance K vs B' },
-            { title: '.lw', rowId: 'cmd_lw', description: 'Rekap lengkap semua taruhan' },
-            { title: '.wd', rowId: 'cmd_wd', description: 'Lihat semua saldo player' },
-            { title: '.chasil', rowId: 'cmd_chasil', description: 'Laporan total fee admin' },
-            { title: '.fee', rowId: 'cmd_fee', description: 'Hitung fee per tim' },
-            { title: '.back', rowId: 'cmd_back', description: 'Restore backup data' }
+            { title: '.openlw [template]', rowId: '.openlw', description: 'Buka sesi taruhan baru dengan template' },
+            { title: '.resetlw', rowId: '.resetlw', description: 'Reset/hapus sesi LW aktif' },
+            { title: '.k [hasil] / .b [hasil]', rowId: '.k', description: 'Input hasil K atau B (fee 10%)' },
+            { title: '.wk/.wb [hasil]', rowId: '.wk', description: 'Input hasil perak (fee bertingkat)' },
+            { title: '.cbl', rowId: '.cbl', description: 'Cek balance K vs B saat ini' },
+            { title: '.lw', rowId: '.lw', description: 'Rekap lengkap semua taruhan' },
+            { title: '.wd', rowId: '.wd', description: 'Lihat semua saldo player' },
+            { title: '.chasil', rowId: '.chasil', description: 'Laporan total fee admin' },
+            { title: '.fee', rowId: '.fee', description: 'Hitung fee per tim' },
+            { title: '.back', rowId: '.back', description: 'Restore backup data sesi LW' }
           ]
         },
         {
           title: '🍨 SALDO & HUTANG',
           rows: [
-            { title: '.depo', rowId: 'cmd_depo', description: 'Tambah saldo player' },
-            { title: '.delsaldo', rowId: 'cmd_delsaldo', description: 'Kurangi saldo player' },
-            { title: '.editsaldo', rowId: 'cmd_editsaldo', description: 'Ubah saldo secara manual' },
-            { title: '.geser', rowId: 'cmd_geser', description: 'Transfer saldo antar player' },
-            { title: '.bulatkan', rowId: 'cmd_bulatkan', description: 'Bulatkan saldo kelipatan 100' },
-            { title: '.dslf / .tslf', rowId: 'cmd_slf', description: 'Kurangi / tambah hutang LF' },
-            { title: '.lunas', rowId: 'cmd_lunas', description: 'Hapus hutang dari list' },
-            { title: '.hapus', rowId: 'cmd_hapus', description: 'Hapus nama dari database' }
+            { title: '.depo [nama] [nominal]', rowId: '.depo', description: 'Tambah saldo player' },
+            { title: '.delsaldo [nama] [nom]', rowId: '.delsaldo', description: 'Kurangi saldo player' },
+            { title: '.editsaldo [nama] [nom]', rowId: '.editsaldo', description: 'Ubah saldo secara manual' },
+            { title: '.geser [n1] [n2] [nom]', rowId: '.geser', description: 'Transfer saldo antar player' },
+            { title: '.bulatkan [nama]', rowId: '.bulatkan', description: 'Bulatkan saldo kelipatan 100' },
+            { title: '.dslf/.tslf [nama] [nom]', rowId: '.dslf', description: 'Kurangi / tambah hutang LF' },
+            { title: '.lunas [nama]', rowId: '.lunas', description: 'Hapus hutang dari list' },
+            { title: '.hapus [nama]', rowId: '.hapus', description: 'Hapus nama dari database' }
           ]
         },
         {
           title: '🎈 AUTO LIST & REKAP',
           rows: [
-            { title: '.lk / .lb', rowId: 'cmd_lklb', description: 'Tambah player ke tim K atau B' },
-            { title: '.list', rowId: 'cmd_list', description: 'Lihat list taruhan tersimpan' },
-            { title: '.resetlist', rowId: 'cmd_resetlist', description: 'Kosongkan list taruhan' },
-            { title: '.c', rowId: 'cmd_c', description: 'Cek TF & saldo player' },
-            { title: '.r', rowId: 'cmd_r', description: 'Rekap total & status' },
-            { title: '.tlk / .klk / .hlk', rowId: 'cmd_editk', description: 'Edit tim K (tambah/kurang/hapus)' },
-            { title: '.tlb / .klb / .hlb', rowId: 'cmd_editb', description: 'Edit tim B (tambah/kurang/hapus)' }
+            { title: '.lk/.lb [nama]', rowId: '.lk', description: 'Tambah player ke tim K atau B' },
+            { title: '.list', rowId: '.list', description: 'Lihat list taruhan tersimpan' },
+            { title: '.resetlist', rowId: '.resetlist', description: 'Kosongkan list taruhan' },
+            { title: '.c [nama]', rowId: '.c', description: 'Cek TF & saldo player' },
+            { title: '.r', rowId: '.r', description: 'Rekap total & status list' },
+            { title: '.tlk/.klk [nama] [nom]', rowId: '.tlk', description: 'Edit tim K (tambah/kurang/hapus)' },
+            { title: '.tlb/.klb [nama] [nom]', rowId: '.tlb', description: 'Edit tim B (tambah/kurang/hapus)' }
           ]
         },
         {
           title: '🎠 GESERAN',
           rows: [
-            { title: '.geseran <jml> <saldo>', rowId: 'cmd_geseran', description: 'Mulai sesi bagi saldo otomatis' },
-            { title: '.stopgeseran', rowId: 'cmd_stopgeseran', description: 'Hentikan sesi geseran' }
+            { title: '.geseran [jml] [nom]', rowId: '.geseran', description: 'Mulai sesi bagi saldo otomatis' },
+            { title: '.stopgeseran', rowId: '.stopgeseran', description: 'Hentikan sesi geseran' }
           ]
         },
         {
           title: '🧸 UTILITY',
           rows: [
-            { title: '.sewa <hari>', rowId: 'cmd_sewa', description: 'Order / info harga sewa bot' },
-            { title: '.cek', rowId: 'cmd_cek', description: 'Cek status sewa aktifmu' },
-            { title: '.predik', rowId: 'cmd_predik', description: 'Prediksi angka dadu 9D' },
-            { title: '.pay', rowId: 'cmd_pay', description: 'Tampilkan info pembayaran QRIS' },
-            { title: '.setpp', rowId: 'cmd_setpp', description: 'Set foto profil grup' },
-            { title: '.o', rowId: 'cmd_o', description: 'Tag semua anggota grup' },
-            { title: '.tourl', rowId: 'cmd_tourl', description: 'Upload media ke URL publik' },
-            { title: '.ping', rowId: 'cmd_ping', description: 'Cek kecepatan respons bot' }
+            { title: '.sewa [hari] [nomor]', rowId: '.sewa', description: 'Order / info harga sewa bot' },
+            { title: '.cek', rowId: '.cek', description: 'Cek status sewa aktifmu' },
+            { title: '.predik', rowId: '.predik', description: 'Prediksi angka dadu 9D' },
+            { title: '.pay', rowId: '.pay', description: 'Tampilkan info pembayaran QRIS' },
+            { title: '.setpp', rowId: '.setpp', description: 'Set foto profil grup (reply foto)' },
+            { title: '.o [pesan]', rowId: '.o', description: 'Tag semua anggota grup' },
+            { title: '.tourl', rowId: '.tourl', description: 'Upload media ke URL (reply media)' },
+            { title: '.ping', rowId: '.ping', description: 'Cek kecepatan respons bot' }
           ]
         },
         {
           title: '🍬 OWNER & ADMIN',
           rows: [
-            { title: '.addvip / .delvip', rowId: 'cmd_vip', description: 'Kelola akses VIP user' },
-            { title: '.self / .public', rowId: 'cmd_mode', description: 'Ubah mode bot' },
-            { title: '.kick', rowId: 'cmd_kick', description: 'Keluarkan anggota dari grup' },
-            { title: '.tagall / .hidetag', rowId: 'cmd_tag', description: 'Tag semua (biasa/tersembunyi)' },
-            { title: '.del', rowId: 'cmd_del', description: 'Hapus pesan' },
-            { title: '.setlw', rowId: 'cmd_setlw', description: 'Simpan template LW' },
-            { title: '.totalfitur', rowId: 'cmd_totalfitur', description: 'Lihat jumlah total fitur bot' }
+            { title: '.addvip/.delvip [@tag]', rowId: '.addvip', description: 'Kelola akses VIP user' },
+            { title: '.addown/.delowner [@tag]', rowId: '.addown', description: 'Kelola owner bot (superadmin)' },
+            { title: '.listowner', rowId: '.listowner', description: 'List all owner tambahan' },
+            { title: '.cekowner', rowId: '.cekowner', description: 'Cek daftar semua owner bot' },
+            { title: '.self / .public', rowId: '.self', description: 'Ubah mode bot' },
+            { title: '.kick [@tag]', rowId: '.kick', description: 'Keluarkan anggota dari grup' },
+            { title: '.tagall/.hidetag [psn]', rowId: '.tagall', description: 'Tag semua (biasa/tersembunyi)' },
+            { title: '.del', rowId: '.del', description: 'Hapus pesan bot (reply pesan)' },
+            { title: '.setlw [adm|hp|roll|...]', rowId: '.setlw', description: 'Simpan template LW' },
+            { title: '.totalfitur', rowId: '.totalfitur', description: 'Lihat jumlah total fitur bot' }
           ]
         }
       ];
@@ -173,7 +176,7 @@ export async function handleMiscCommand(ctx) {
         const menuSections = sections.map(sec => ({
           title: String(sec.title || '').slice(0, 24),
           rows: sec.rows.map(row => ({
-            title: String(row.title || '').slice(0, 20),
+            title: String(row.title || '').slice(0, 24),
             description: String(row.description || '').slice(0, 70),
             id: row.rowId
           }))
@@ -253,12 +256,41 @@ export async function handleMiscCommand(ctx) {
     }
 
     case 'addown': {
-      if (!isOwner) return reply('Hanya owner utama yang bisa menambah owner!');
-      const mentioned = m.mentionedJid?.[0] || m.quoted?.sender || null;
-      if (!mentioned) return reply('Tag nomor atau reply pesan orang yang ingin dijadikan owner!');
-      if (!globalState.owner.includes(mentioned)) {
-        globalState.owner.push(mentioned);
-        reply(`Berhasil menambahkan @${mentioned.split('@')[0]} sebagai owner.`);
+      const cleanSender = m.sender ? (m.sender.split(':')[0].split('@')[0] + '@s.whatsapp.net') : '';
+      const botNumber = await Promise.resolve(sock.decodeJid(sock.user.id));
+      const superOwnerJid = `${(globalState.owner?.[0] || '').replace(/[^0-9]/g, '')}@s.whatsapp.net`;
+      const isSuperOwner = [botNumber, superOwnerJid].includes(cleanSender);
+
+      if (!isSuperOwner) return reply('❌ Hanya owner utama (superadmin) yang bisa menambah owner!');
+      
+      const quotedSender = m.quoted?.sender;
+      const cleanQuoted = quotedSender ? sock.decodeJid(quotedSender) : null;
+      const botLid = sock.authState?.creds?.me?.lid ? sock.decodeJid(sock.authState.creds.me.lid) : null;
+      const isQuotedFromBot = m.quoted?.fromMe 
+        || (cleanQuoted === botNumber) 
+        || (botLid && cleanQuoted === botLid);
+      
+      const mentioned = m.mentionedJid?.[0] || (m.quoted && !isQuotedFromBot ? m.quoted.sender : null);
+      
+      if (!mentioned || mentioned.replace(/[^0-9]/g, '').length < 5) {
+        return reply('❌ Format parameter tidak sesuai! Silakan tag nomor target atau reply pesan orangnya.');
+      }
+      const cleanNum = mentioned.replace(/[^0-9]/g, '');
+      const cleanText = text.replace(/@[0-9]+/g, '').trim();
+      const name = cleanText || 'Owner';
+
+      if (!globalState.owner.includes(cleanNum)) {
+        globalState.owner.push(cleanNum);
+        if (!globalState.ownerData) globalState.ownerData = [];
+        globalState.ownerData.push({ nomor: cleanNum, nama: name });
+        try {
+          fs.writeFileSync(path.join(process.cwd(), 'data', 'owner.json'), JSON.stringify({
+            owner: globalState.ownerData
+          }, null, 2));
+        } catch (e) {
+          console.error('Gagal menulis owner.json:', e.message);
+        }
+        reply(`Berhasil menambahkan @${cleanNum} dengan nama "${name}" sebagai owner.`);
       } else {
         reply('User tersebut sudah terdaftar sebagai owner.');
       }
@@ -266,24 +298,52 @@ export async function handleMiscCommand(ctx) {
     }
 
     case 'delowner': {
-      if (!isOwner) return true;
-      const who = m.quoted ? m.quoted.sender : m.text.split(' ')[1] ? `${m.text.split(' ')[1].replace(/[^0-9]/g, '')}@s.whatsapp.net` : null;
-      if (!who) return reply('Tag orangnya!');
-      if (!globalState.owner.includes(who)) return reply('Dia emang bukan owner.');
-      globalState.owner = globalState.owner.filter((id) => id !== who);
-      reply(`Nomor ${who.split('@')[0]} dihapus dari daftar owner.`);
+      const cleanSender = m.sender ? (m.sender.split(':')[0].split('@')[0] + '@s.whatsapp.net') : '';
+      const botNumber = await Promise.resolve(sock.decodeJid(sock.user.id));
+      const superOwnerJid = `${(globalState.owner?.[0] || '').replace(/[^0-9]/g, '')}@s.whatsapp.net`;
+      const isSuperOwner = [botNumber, superOwnerJid].includes(cleanSender);
+
+      if (!isSuperOwner) return reply('❌ Hanya owner utama (superadmin) yang bisa menghapus owner!');
+      
+      const quotedSender = m.quoted?.sender;
+      const cleanQuoted = quotedSender ? sock.decodeJid(quotedSender) : null;
+      const botLid = sock.authState?.creds?.me?.lid ? sock.decodeJid(sock.authState.creds.me.lid) : null;
+      const isQuotedFromBot = m.quoted?.fromMe 
+        || (cleanQuoted === botNumber) 
+        || (botLid && cleanQuoted === botLid);
+      
+      const who = (m.quoted && !isQuotedFromBot) ? m.quoted.sender : m.text.split(' ')[1] ? `${m.text.split(' ')[1].replace(/[^0-9]/g, '')}@s.whatsapp.net` : null;
+      
+      if (!who || who.replace(/[^0-9]/g, '').length < 5) {
+        return reply('❌ Format parameter tidak sesuai! Silakan tag nomor target atau reply pesan orangnya.');
+      }
+      const cleanNum = who.replace(/[^0-9]/g, '');
+      if (!globalState.owner.includes(cleanNum)) return reply('Dia emang bukan owner.');
+      globalState.owner = globalState.owner.filter((id) => id !== cleanNum);
+      if (globalState.ownerData) {
+        globalState.ownerData = globalState.ownerData.filter((o) => o.nomor !== cleanNum);
+      }
+      try {
+        fs.writeFileSync(path.join(process.cwd(), 'data', 'owner.json'), JSON.stringify({
+          owner: globalState.ownerData || []
+        }, null, 2));
+      } catch (e) {
+        console.error('Gagal menulis owner.json:', e.message);
+      }
+      reply(`Nomor ${cleanNum} dihapus dari daftar owner.`);
       return true;
     }
 
     case 'listowner':
     case 'listown': {
       if (!isOwner) return reply('Hanya owner.');
-      if (!globalState.owner || globalState.owner.length < 1) return reply('Tidak ada owner tambahan');
-      let teks = `\n *#- List all owner tambahan*\n`;
-      for (const item of globalState.owner) {
-        teks += `\n* ${item.split('@')[0]}\n* *Tag :* @${item.split('@')[0]}\n`;
+      if (!globalState.ownerData || globalState.ownerData.length < 1) return reply('Tidak ada owner tambahan');
+      let teks = `\n *#- List all owner*\n`;
+      for (const item of globalState.ownerData) {
+        teks += `\n* Nama: ${item.nama}\n* Nomor: ${item.nomor}\n* *Tag :* @${item.nomor}\n`;
       }
-      await sock.sendMessage(m.chat, { text: teks, mentions: globalState.owner }, { quoted: m });
+      const ownerJids = globalState.ownerData.map((v) => `${v.nomor.replace(/[^0-9]/g, '')}@s.whatsapp.net`);
+      await sock.sendMessage(m.chat, { text: teks, mentions: ownerJids }, { quoted: m });
       return true;
     }
 

@@ -27,16 +27,32 @@ function bootstrapRuntime() {
   globalState.namaown = global.namaown || pkg.name;
 
   const OWNER_PATH = path.join(process.cwd(), 'data', 'owner.json');
-  const PREMIUM_PATH = path.join(process.cwd(), 'data', 'premium.json');
 
-  const ownerList = readJsonFile(OWNER_PATH, globalState.owner);
-  const premiumFile = readJsonFile(PREMIUM_PATH, { premium: [] });
-  const premium = Array.isArray(premiumFile) ? premiumFile : (premiumFile.premium || []);
+  const ownerData = readJsonFile(OWNER_PATH, { owner: [{ nomor: '6285591386135', nama: 'Tama' }] });
+  let rawOwners = [];
+  if (Array.isArray(ownerData)) {
+    rawOwners = ownerData;
+  } else if (ownerData && Array.isArray(ownerData.owner)) {
+    rawOwners = ownerData.owner;
+  }
+
+  const owners = rawOwners.map((o) => {
+    if (typeof o === 'string') {
+      return { nomor: o.replace(/[^0-9]/g, ''), nama: o === '6285591386135' ? 'Tama' : 'Owner' };
+    }
+    if (o && typeof o === 'object') {
+      return { nomor: (o.nomor || '').replace(/[^0-9]/g, ''), nama: o.nama || 'Owner' };
+    }
+    return null;
+  }).filter(Boolean);
+
+  globalState.owner = owners.map((o) => o.nomor);
+  globalState.ownerData = owners;
+  globalState.namaown = owners[0]?.nama || 'Owner';
 
   return {
     globalState,
     contributors: [],
-    premium,
     loadVIP,
     isVIP,
     addVIP,

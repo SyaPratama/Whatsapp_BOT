@@ -61,12 +61,9 @@ function smsg(conn, m, store) {
   // ── Helper: decode JID synchronously (decodeJid may be sync or async in mocks)
   function resolveJid(jid) {
     if (!jid) return '';
-    // Already normalized
-    if (!jid.includes(':') || jid.endsWith('@s.whatsapp.net') || jid.endsWith('@g.us')) return jid;
-    // Multi-device JID: strip device suffix
-    const [user, rest] = jid.split(':');
-    const server = rest?.split('@')[1];
-    return server ? `${user}@${server}` : jid;
+    const clean = jid.split(':')[0].split('@')[0];
+    const server = jid.includes('@') ? jid.split('@')[1] : 's.whatsapp.net';
+    return `${clean}@${server}`;
   }
 
   // ── Key fields (only populate if not already set)
@@ -81,6 +78,14 @@ function smsg(conn, m, store) {
       m.sender = resolveJid(
         m.fromMe && conn.user?.id || m.participant || m.key.participant || m.chat || ''
       );
+    }
+    // Resolve LID JID to phone JID using contact store if available
+    if (m.sender && m.sender.endsWith('@lid') && store?.contacts) {
+      const contactsVal = store.contacts.values ? Array.from(store.contacts.values()) : Object.values(store.contacts);
+      const contact = contactsVal.find(c => c.lid === m.sender);
+      if (contact && contact.id && contact.id.endsWith('@s.whatsapp.net')) {
+        m.sender = contact.id;
+      }
     }
     if (m.isGroup && !m.participant) {
       m.participant = resolveJid(m.key.participant) || '';
@@ -99,11 +104,19 @@ function smsg(conn, m, store) {
 
     // body: prefer already-set value
     if (!m.body) {
+      let interactiveBody = '';
+      if (m.mtype === 'interactiveResponseMessage' && m.msg?.nativeFlowResponseMessage?.paramsJson) {
+        try {
+          const parsed = JSON.parse(m.msg.nativeFlowResponseMessage.paramsJson);
+          interactiveBody = parsed.id || '';
+        } catch {}
+      }
       m.body = m.message.conversation
         || m.msg?.caption
         || m.msg?.text
         || (m.mtype === 'listResponseMessage' && m.msg?.singleSelectReply?.selectedRowId)
         || (m.mtype === 'buttonsResponseMessage' && m.msg?.selectedButtonId)
+        || interactiveBody
         || (m.mtype === 'viewOnceMessage' && m.msg?.caption)
         || m.text
         || '';
@@ -126,7 +139,9 @@ function smsg(conn, m, store) {
       m.quoted.chat  = m.msg.contextInfo.remoteJid || m.chat;
       m.quoted.isBaileys = m.quoted.id ? m.quoted.id.startsWith('BAE5') && m.quoted.id.length === 16 : false;
       m.quoted.sender  = resolveJid(m.msg.contextInfo.participant);
-      m.quoted.fromMe  = m.quoted.sender === resolveJid(conn.user?.id);
+      const botJid = resolveJid(conn.user?.id);
+      const botLid = conn.authState?.creds?.me?.lid ? resolveJid(conn.authState.creds.me.lid) : '';
+      m.quoted.fromMe  = m.quoted.sender === botJid || (botLid && m.quoted.sender === botLid);
       m.quoted.text    = m.quoted.text || m.quoted.caption || m.quoted.conversation || m.quoted.contentText || m.quoted.selectedDisplayText || m.quoted.title || '';
       m.quoted.mentionedJid = m.msg.contextInfo.mentionedJid || [];
 
@@ -143,7 +158,7 @@ function smsg(conn, m, store) {
       });
 
       m.quoted.delete   = () => conn.sendMessage(m.quoted.chat, { delete: vM.key });
-      m.quoted.download = () => conn.downloadAndSaveMediaMessage?.(m.quoted);
+      m.quoted.download = () => conn.downloadAndSaveMediaMessage?.(m.quoted.fakeObj);
     }
   }
 
@@ -152,7 +167,7 @@ function smsg(conn, m, store) {
   if (!m.text) m.text = m.body;
 
   if (m.msg?.url && !m.download) {
-    m.download = () => conn.downloadAndSaveMediaMessage?.(m.msg);
+    m.download = () => conn.downloadAndSaveMediaMessage?.(m);
   }
 
   if (!m.reply) {
