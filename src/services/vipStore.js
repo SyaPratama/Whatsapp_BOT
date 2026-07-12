@@ -31,9 +31,19 @@ function createVipStore(filePath = DEFAULT_VIP_FILE) {
     return cache;
   }
 
+  function normalizeJid(jid) {
+    if (typeof jid !== 'string') return '';
+    const clean = jid.split(':')[0].split('@')[0].replace(/[^0-9]/g, '');
+    if (jid.endsWith('@lid')) {
+      return `${clean}@lid`;
+    }
+    return `${clean}@s.whatsapp.net`;
+  }
+
   function isVIP(jid) {
+    const cleaned = normalizeJid(jid);
     const data = loadVIP();
-    const entry = data[jid];
+    const entry = data[cleaned];
     if (!entry) return false;
 
     return Date.now() < new Date(entry.expired).getTime();
@@ -41,24 +51,26 @@ function createVipStore(filePath = DEFAULT_VIP_FILE) {
 
   function addVIP(jid, days) {
     loadVIP();
+    const cleaned = normalizeJid(jid);
 
     const durationDays = Number(days) || 0;
     const expiredDate = new Date();
     expiredDate.setDate(expiredDate.getDate() + durationDays);
 
-    cache[jid] = {
+    cache[cleaned] = {
       added: new Date().toISOString(),
       expired: expiredDate.toISOString(),
       days: durationDays
     };
 
     saveVIP();
-    return cache[jid];
+    return cache[cleaned];
   }
 
   function delVIP(jid) {
     loadVIP();
-    delete cache[jid];
+    const cleaned = normalizeJid(jid);
+    delete cache[cleaned];
     saveVIP();
     return true;
   }

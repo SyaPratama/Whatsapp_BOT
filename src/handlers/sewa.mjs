@@ -68,8 +68,9 @@ function generateOrderId(days) {
  * @returns {Object} Detail hasil penambahan sewa
  */
 function addSewa(globalState, { userJid, days, addedBy, customer }) {
-  if (!globalState.sewaDb) globalState.sewaDb = loadSewaDb();
-  const existing = globalState.sewaDb[userJid];
+  const db = loadSewaDb();
+  globalState.sewaDb = db;
+  const existing = db[userJid];
   let baseDate = new Date();
 
   if (existing) {
@@ -82,7 +83,7 @@ function addSewa(globalState, { userJid, days, addedBy, customer }) {
   const expired = new Date(baseDate.getTime() + days * 86400000);
   const totalDays = existing ? (existing.days + days) : days;
 
-  globalState.sewaDb[userJid] = {
+  db[userJid] = {
     added: existing?.added || Date.now(),
     expired: expired.toISOString(),
     days: totalDays,
@@ -93,7 +94,7 @@ function addSewa(globalState, { userJid, days, addedBy, customer }) {
     customer: customer || existing?.customer || '',
     warned: false
   };
-  persist(globalState);
+  saveSewaDb(db);
   return { userJid, expired, totalDays, isExtend: !!existing };
 }
 
@@ -104,9 +105,11 @@ function addSewa(globalState, { userJid, days, addedBy, customer }) {
  * @returns {boolean} True jika berhasil dihapus, false jika tidak ditemukan
  */
 function removeSewa(globalState, userJid) {
-  if (!globalState.sewaDb || !globalState.sewaDb[userJid]) return false;
-  delete globalState.sewaDb[userJid];
-  persist(globalState);
+  const db = loadSewaDb();
+  globalState.sewaDb = db;
+  if (!db[userJid]) return false;
+  delete db[userJid];
+  saveSewaDb(db);
   return true;
 }
 
@@ -116,8 +119,9 @@ function removeSewa(globalState, userJid) {
  * @returns {Array} Array pasangan [userJid, dataSewa]
  */
 function listSewa(globalState) {
-  if (!globalState.sewaDb) globalState.sewaDb = loadSewaDb();
-  return Object.entries(globalState.sewaDb);
+  const db = loadSewaDb();
+  globalState.sewaDb = db;
+  return Object.entries(db);
 }
 
 /**
@@ -127,8 +131,9 @@ function listSewa(globalState) {
  * @returns {Object|null} Objek data sewa atau null jika tidak ada
  */
 function getSewaInfo(globalState, userJid) {
-  if (!globalState.sewaDb) globalState.sewaDb = loadSewaDb();
-  return globalState.sewaDb[userJid] || null;
+  const db = loadSewaDb();
+  globalState.sewaDb = db;
+  return db[userJid] || null;
 }
 
 /**
@@ -289,7 +294,7 @@ _AKSES PRO AKTIF OTOMATIS SETELAH PEMBAYARAN TERVERIFIKASI._`;
     case 'cek':
     case 'statussewa':
     case 'sewaaktif': {
-      if (!globalState.sewaDb) globalState.sewaDb = loadSewaDb();
+      globalState.sewaDb = loadSewaDb();
 
       if (!isOwner && (m.mentionedJid?.length || args[0])) {
         return reply('❌ HANYA OWNER YANG BISA CEK USER LAIN.');
@@ -352,7 +357,7 @@ export { isSewaActive, getSewaInfo, loadSewaDb };
  */
 export function createSewaScheduler(globalState) {
   return async function cekSewaExpiry(sock) {
-    if (!globalState.sewaDb) globalState.sewaDb = loadSewaDb();
+    globalState.sewaDb = loadSewaDb();
     const entries = listSewa(globalState);
     const now = Date.now();
     const oneDay = 86400000;

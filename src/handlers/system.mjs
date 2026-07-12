@@ -2,7 +2,8 @@ function buildOwnerText(globalState) {
   let text = `👑 *DAFTAR OWNER BOT*\n\n► Nama: ${globalState.namaown || 'Owner'}\n`;
   if (globalState.owner && globalState.owner.length > 0) {
     globalState.owner.forEach((item, index) => {
-      text += `► WhatsApp ${index + 1}: wa.me/${item.replace(/[^0-9]/g, '')}\n`;
+      const status = index === 0 ? 'Superadmin (Utama)' : 'Admin';
+      text += `► WhatsApp ${index + 1} [${status}]: wa.me/${item.replace(/[^0-9]/g, '')}\n`;
     });
   }
   text += `\n_Hubungi salah satu owner di atas untuk pembelian script atau sewa bot._`;
@@ -20,7 +21,7 @@ export async function handleSystemCommand(ctx) {
     case 'pembuat': {
       const contacts = (globalState.owner || []).map((item, index) => {
         const num = item.replace(/[^0-9]/g, '');
-        const name = index === 0 ? (globalState.namaown || 'Owner Utama') : `Owner Tambahan ${index}`;
+        const name = index === 0 ? (globalState.namaown || 'Superadmin') : `Admin Owner ${index}`;
         return {
           vcard: `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nORG:Owner Bot;\nTEL;type=CELL;type=VOICE;waid=${num}:${num}\nEND:VCARD`
         };
@@ -50,9 +51,9 @@ export async function handleSystemCommand(ctx) {
         return reply('Belum ada owner yang terdaftar.');
       }
       let teks = `👑 *DAFTAR OWNER BOT*\n\n`;
-      teks += `► Owner Utama: @${globalState.owner[0].split('@')[0]}\n`;
+      teks += `► Superadmin (Utama): @${globalState.owner[0].split('@')[0]}\n`;
       if (globalState.owner.length > 1) {
-        teks += `► Owner Tambahan:\n`;
+        teks += `► Admin Owner:\n`;
         for (let i = 1; i < globalState.owner.length; i++) {
           const item = globalState.owner[i];
           teks += `  - @${item.split('@')[0]}\n`;

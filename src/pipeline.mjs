@@ -28,9 +28,31 @@ async function buildContext({ sock, m, globalState, deps }) {
   const quoted = m.quoted || m;
   const mime   = (quoted.msg || quoted).mimetype || '';
 
+  const fs = await import('node:fs');
+  const path = await import('node:path');
+  const loadOwnersFresh = () => {
+    const ownerPath = path.join(process.cwd(), 'data', 'owner.json');
+    try {
+      const raw = JSON.parse(fs.readFileSync(ownerPath, 'utf8'));
+      const list = Array.isArray(raw) ? raw : (raw && Array.isArray(raw.owner)) ? raw.owner : [];
+      const formatted = list.map(o => {
+        if (typeof o === 'string') return { nomor: o.replace(/[^0-9]/g, ''), nama: o === '6285591386135' ? 'Tama' : 'Owner' };
+        return { nomor: String(o.nomor || '').replace(/[^0-9]/g, ''), nama: o.nama || 'Owner' };
+      }).filter(o => o.nomor);
+      return formatted.length > 0 ? formatted : [{ nomor: '6285591386135', nama: 'Tama' }];
+    } catch {
+      return [{ nomor: '6285591386135', nama: 'Tama' }];
+    }
+  };
+
+  const owners = loadOwnersFresh();
+  globalState.ownerData = owners;
+  globalState.owner = owners.map(o => o.nomor);
+  globalState.namaown = owners[0]?.nama || 'Owner';
+
   // Bot number via decodeJid (added to sock in socket.cjs)
   const botNumber   = await Promise.resolve(sock.decodeJid(sock.user.id));
-  const ownerList   = (globalState.owner || []).map((v) => v.replace(/[^0-9]/g, '') + '@s.whatsapp.net');
+  const ownerList   = globalState.owner.map((v) => v + '@s.whatsapp.net');
   const kontributor = deps.contributors || [];
   let cleanSender = m.sender ? (m.sender.split(':')[0].split('@')[0] + '@s.whatsapp.net') : '';
   if (m.sender && m.sender.endsWith('@lid') && sock.store?.contacts) {
@@ -83,7 +105,18 @@ async function buildContext({ sock, m, globalState, deps }) {
     isAdmins,
     isBotAdmins,
     isGroupOwner,
-    isVIP:          (jid) => (typeof deps.isVIP === 'function' ? deps.isVIP(jid) : false),
+    isVIP:          (jid) => {
+      if (typeof deps.isVIP !== 'function') return false;
+      let target = jid || '';
+      if (jid && jid.endsWith('@lid') && sock.store?.contacts) {
+        const contactsList = sock.store.contacts.values ? Array.from(sock.store.contacts.values()) : Object.values(sock.store.contacts);
+        const contact = contactsList.find((c) => c.lid === jid);
+        if (contact && contact.id && contact.id.endsWith('@s.whatsapp.net')) {
+          target = contact.id;
+        }
+      }
+      return deps.isVIP(target);
+    },
     globalState,
     runtime:        deps.runtime,
     loadVIP:        deps.loadVIP,
