@@ -1,0 +1,6 @@
+✔ outbound: hard-cap timestamps prevents unbounded array growth (317.1767ms)
+✔ outbound: queue hard-cap drops messages and increments counter (500.8432ms)
+✔ outbound: per-JID cache evicts oldest entries when full (479.784ms)
+✔ outbound: stats() reports dropped count and queueSize (200.6671ms)
+✔ outbound: stop() clears queue and rejects new enqueues (0.5758ms)
+✔ outbound: drain backoff prevents tight loop when global window is saturated (216.0567ms)
