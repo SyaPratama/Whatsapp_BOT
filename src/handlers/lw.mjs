@@ -447,8 +447,7 @@ export async function handleLwCommand(ctx) {
 
     case 'listkb':
     case 'ceklist':
-    case 'showlist':
-    case 'list': {
+    case 'showlist': {
       if (!isOwner && !isVIP(m.sender)) return reply('Fitur ini khusus user VIP king!');
       if (!globalState.db_lw[m.chat]) return reply('Buka sesi LW dulu dengan .openlw');
       reply('K:\n\n\nB:\n\n\n');

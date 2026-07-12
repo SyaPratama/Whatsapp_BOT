@@ -115,7 +115,7 @@ export async function handleMiscCommand(ctx) {
           title: '🎈 AUTO LIST & REKAP',
           rows: [
             { title: '.lk/.lb / .listk/.listb', rowId: '.lk', description: 'Tambah player ke tim K atau B' },
-            { title: '.list / .listfitur / .df', rowId: '.list', description: 'Lihat list taruhan tersimpan' },
+            { title: '.list / .listkb / .ceklist', rowId: '.list', description: 'Lihat antrian taruhan K/B' },
             { title: '.resetlist / .clearlist', rowId: '.resetlist', description: 'Kosongkan list taruhan' },
             { title: '.c / .cekantrian [nama]', rowId: '.c', description: 'Cek TF & saldo player' },
             { title: '.r / .rekaplist', rowId: '.r', description: 'Rekap total & status list' },
