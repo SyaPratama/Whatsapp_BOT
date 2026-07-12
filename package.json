@@ -1,7 +1,7 @@
 {
-  "name": "sc kb fierlyy",
+  "name": "Bot Whatsapp Zoee",
   "version": "5.0",
-  "description": "Bot Kb fierlyy (Baileys WhatsApp bot - default pairing code auth, Android fingerprint)",
+  "description": "Bot Whatsapp Zoee (Baileys WhatsApp bot - default pairing code auth, Android fingerprint)",
   "main": "main.js",
   "type": "commonjs",
   "scripts": {
