@@ -6,7 +6,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const SEWA_DB_PATH = path.join(process.cwd(), 'data', 'sewa.json');
-const PRICE_PER_DAY = 3000;
 const priceTable = [
   { hari: 1, harga: 3000 },
   { hari: 5, harga: 8000 },
@@ -271,7 +270,7 @@ _AKSES PRO SUDAH AKTIF._`);
       if (!args[0]) {
         return reply(`🧾 *INFO SEWA BOT*
 
-💰 HARGA  : *${formatRupiah(PRICE_PER_DAY)}/HARI*
+💰 HARGA  : *${formatRupiah(hitungHarga(1))}/HARI*
 📦 MINIMAL: *1 HARI*
 
 CONTOH HARGA:
@@ -286,12 +285,7 @@ CARA ORDER:
 CONTOH: .${command} 7`);
       }
 
-      const allowedPackages = new Set([1, 3, 7, 14, 30]);
-      if (!allowedPackages.has(hari)) {
-        return reply('❌ PAKET TIDAK ADA. SILAKAN PILIH PAKET YANG TERSEDIA (1, 3, 7, 14, 30 HARI).');
-      }
-
-      const totalHarga = PRICE_PER_DAY * hari;
+      const totalHarga = hitungHarga(hari);
       const orderId = generateOrderId(hari);
       const paketLabel = `${hari} HARI`;
 
