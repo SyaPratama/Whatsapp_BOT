@@ -86,76 +86,76 @@ export async function handleMiscCommand(ctx) {
         {
           title: '🎶 UTAMA — Sistem Taruhan',
           rows: [
-            { title: '.openlw [template]', rowId: '.openlw', description: 'Buka sesi taruhan baru dengan template' },
-            { title: '.resetlw', rowId: '.resetlw', description: 'Reset/hapus sesi LW aktif' },
-            { title: '.k [hasil] / .b [hasil]', rowId: '.k', description: 'Input hasil K atau B (fee 10%)' },
-            { title: '.wk/.wb [hasil]', rowId: '.wk', description: 'Input hasil perak (fee bertingkat)' },
-            { title: '.cbl', rowId: '.cbl', description: 'Cek balance K vs B saat ini' },
-            { title: '.lw', rowId: '.lw', description: 'Rekap lengkap semua taruhan' },
-            { title: '.wd', rowId: '.wd', description: 'Lihat semua saldo player' },
-            { title: '.chasil', rowId: '.chasil', description: 'Laporan total fee admin' },
-            { title: '.fee', rowId: '.fee', description: 'Hitung fee per tim' },
-            { title: '.back', rowId: '.back', description: 'Restore backup data sesi LW' }
+            { title: '.openlw / .bukalw [tmpl]', rowId: '.openlw', description: 'Buka sesi taruhan baru dengan template' },
+            { title: '.resetlw / .closelw', rowId: '.resetlw', description: 'Reset/hapus sesi LW aktif' },
+            { title: '.k / .b / .kiri / .kanan', rowId: '.k', description: 'Input hasil K atau B (fee 10%)' },
+            { title: '.wk / .wb / .wsk / .wsb', rowId: '.wk', description: 'Input hasil perak (fee bertingkat)' },
+            { title: '.cbl / .cekbal / .balance', rowId: '.cbl', description: 'Cek balance K vs B saat ini' },
+            { title: '.lw / .rekap / .status', rowId: '.lw', description: 'Rekap lengkap semua taruhan' },
+            { title: '.wd / .players / .saldo', rowId: '.wd', description: 'Lihat semua saldo player' },
+            { title: '.chasil / .hasil / .cekh', rowId: '.chasil', description: 'Laporan total fee admin' },
+            { title: '.fee / .cekfee / .hitung', rowId: '.fee', description: 'Hitung fee per tim' },
+            { title: '.back / .batal / .undo', rowId: '.back', description: 'Restore backup data sesi LW' }
           ]
         },
         {
           title: '🍨 SALDO & HUTANG',
           rows: [
-            { title: '.depo [nama] [nominal]', rowId: '.depo', description: 'Tambah saldo player' },
-            { title: '.delsaldo [nama] [nom]', rowId: '.delsaldo', description: 'Kurangi saldo player' },
-            { title: '.editsaldo [nama] [nom]', rowId: '.editsaldo', description: 'Ubah saldo secara manual' },
-            { title: '.geser [n1] [n2] [nom]', rowId: '.geser', description: 'Transfer saldo antar player' },
-            { title: '.bulatkan [nama]', rowId: '.bulatkan', description: 'Bulatkan saldo kelipatan 100' },
-            { title: '.dslf/.tslf [nama] [nom]', rowId: '.dslf', description: 'Kurangi / tambah hutang LF' },
-            { title: '.lunas [nama]', rowId: '.lunas', description: 'Hapus hutang dari list' },
-            { title: '.hapus [nama]', rowId: '.hapus', description: 'Hapus nama dari database' }
+            { title: '.depo / .deposit / +saldo', rowId: '.depo', description: 'Tambah saldo player' },
+            { title: '.delsaldo / .potongsaldo', rowId: '.delsaldo', description: 'Kurangi saldo player' },
+            { title: '.editsaldo / .ubahsaldo', rowId: '.editsaldo', description: 'Ubah saldo secara manual' },
+            { title: '.geser / .transfer / .tf', rowId: '.geser', description: 'Transfer saldo antar player' },
+            { title: '.bulatkan / .bulat / .flr', rowId: '.bulatkan', description: 'Bulatkan saldo kelipatan 100' },
+            { title: '.dslf/.tslf / .kurang/tmb', rowId: '.dslf', description: 'Kurangi / tambah hutang LF' },
+            { title: '.lunas / .lunashutang', rowId: '.lunas', description: 'Hapus hutang dari list' },
+            { title: '.hapus / .hapusplayer', rowId: '.hapus', description: 'Hapus nama dari database' }
           ]
         },
         {
           title: '🎈 AUTO LIST & REKAP',
           rows: [
-            { title: '.lk/.lb [nama]', rowId: '.lk', description: 'Tambah player ke tim K atau B' },
-            { title: '.list', rowId: '.list', description: 'Lihat list taruhan tersimpan' },
-            { title: '.resetlist', rowId: '.resetlist', description: 'Kosongkan list taruhan' },
-            { title: '.c [nama]', rowId: '.c', description: 'Cek TF & saldo player' },
-            { title: '.r', rowId: '.r', description: 'Rekap total & status list' },
-            { title: '.tlk/.klk [nama] [nom]', rowId: '.tlk', description: 'Edit tim K (tambah/kurang/hapus)' },
-            { title: '.tlb/.klb [nama] [nom]', rowId: '.tlb', description: 'Edit tim B (tambah/kurang/hapus)' }
+            { title: '.lk/.lb / .listk/.listb', rowId: '.lk', description: 'Tambah player ke tim K atau B' },
+            { title: '.list / .listfitur / .df', rowId: '.list', description: 'Lihat list taruhan tersimpan' },
+            { title: '.resetlist / .clearlist', rowId: '.resetlist', description: 'Kosongkan list taruhan' },
+            { title: '.c / .cekantrian [nama]', rowId: '.c', description: 'Cek TF & saldo player' },
+            { title: '.r / .rekaplist', rowId: '.r', description: 'Rekap total & status list' },
+            { title: '.tlk/.klk / .tambah/krg', rowId: '.tlk', description: 'Edit tim K (tambah/kurang/hapus)' },
+            { title: '.tlb/.klb / .tambah/krg', rowId: '.tlb', description: 'Edit tim B (tambah/kurang/hapus)' }
           ]
         },
         {
           title: '🎠 GESERAN',
           rows: [
-            { title: '.geseran [jml] [nom]', rowId: '.geseran', description: 'Mulai sesi bagi saldo otomatis' },
-            { title: '.stopgeseran', rowId: '.stopgeseran', description: 'Hentikan sesi geseran' }
+            { title: '.geseran / .bagi / .claim', rowId: '.geseran', description: 'Mulai sesi bagi saldo otomatis' },
+            { title: '.stopgeseran / .tutupges', rowId: '.stopgeseran', description: 'Hentikan sesi geseran' }
           ]
         },
         {
           title: '🧸 UTILITY',
           rows: [
-            { title: '.sewa [hari] [nomor]', rowId: '.sewa', description: 'Order / info harga sewa bot' },
-            { title: '.cek', rowId: '.cek', description: 'Cek status sewa aktifmu' },
+            { title: '.sewa / .sewabot / .order', rowId: '.sewa', description: 'Order / info harga sewa bot' },
+            { title: '.cek / .ceksewa / .sewaak', rowId: '.cek', description: 'Cek status sewa aktifmu' },
             { title: '.predik', rowId: '.predik', description: 'Prediksi angka dadu 9D' },
             { title: '.pay', rowId: '.pay', description: 'Tampilkan info pembayaran QRIS' },
-            { title: '.setpp', rowId: '.setpp', description: 'Set foto profil grup (reply foto)' },
-            { title: '.o [pesan]', rowId: '.o', description: 'Tag semua anggota grup' },
-            { title: '.tourl', rowId: '.tourl', description: 'Upload media ke URL (reply media)' },
-            { title: '.ping', rowId: '.ping', description: 'Cek kecepatan respons bot' }
+            { title: '.setpp / .setppgroup', rowId: '.setpp', description: 'Set foto profil grup (reply foto)' },
+            { title: '.o / .tagall / .semua', rowId: '.o', description: 'Tag semua anggota grup' },
+            { title: '.tourl / .upload', rowId: '.tourl', description: 'Upload media ke URL (reply media)' },
+            { title: '.ping / .speed / .tes', rowId: '.ping', description: 'Cek kecepatan respons bot' }
           ]
         },
         {
           title: '🍬 OWNER & ADMIN',
           rows: [
-            { title: '.addvip/.delvip [@tag]', rowId: '.addvip', description: 'Kelola akses VIP user' },
-            { title: '.addown/.delowner [@tag]', rowId: '.addown', description: 'Kelola owner bot (superadmin)' },
-            { title: '.listowner', rowId: '.listowner', description: 'List all owner tambahan' },
-            { title: '.cekowner', rowId: '.cekowner', description: 'Cek daftar semua owner bot' },
-            { title: '.self / .public', rowId: '.self', description: 'Ubah mode bot' },
-            { title: '.kick [@tag]', rowId: '.kick', description: 'Keluarkan anggota dari grup' },
-            { title: '.tagall/.hidetag [psn]', rowId: '.tagall', description: 'Tag semua (biasa/tersembunyi)' },
+            { title: '.addvip/.delvip / +vip/-', rowId: '.addvip', description: 'Kelola akses VIP user' },
+            { title: '.addown/.delowner / +own', rowId: '.addown', description: 'Kelola owner bot (superadmin)' },
+            { title: '.listowner / .cekowner', rowId: '.listowner', description: 'List all owner tambahan' },
+            { title: '.cekowner / .co / .listown', rowId: '.cekowner', description: 'Cek daftar semua owner bot' },
+            { title: '.self / .public / .mode', rowId: '.self', description: 'Ubah mode bot' },
+            { title: '.kick / .tendang / .remov', rowId: '.kick', description: 'Keluarkan anggota dari grup' },
+            { title: '.tagall/.hidetag / .hide', rowId: '.tagall', description: 'Tag semua (biasa/tersembunyi)' },
             { title: '.del', rowId: '.del', description: 'Hapus pesan bot (reply pesan)' },
-            { title: '.setlw [adm|hp|roll|...]', rowId: '.setlw', description: 'Simpan template LW' },
-            { title: '.totalfitur', rowId: '.totalfitur', description: 'Lihat jumlah total fitur bot' }
+            { title: '.setlw / .templatelw', rowId: '.setlw', description: 'Simpan template LW' },
+            { title: '.totalfitur / .ttf / .fit', rowId: '.totalfitur', description: 'Lihat jumlah total fitur bot' }
           ]
         }
       ];
@@ -255,7 +255,10 @@ export async function handleMiscCommand(ctx) {
       return true;
     }
 
-    case 'addown': {
+    case 'addown':
+    case 'ownadd':
+    case 'tambahowner':
+    case 'tambahown': {
       const cleanSender = m.sender ? (m.sender.split(':')[0].split('@')[0] + '@s.whatsapp.net') : '';
       const botNumber = await Promise.resolve(sock.decodeJid(sock.user.id));
       const superOwnerJid = `${(globalState.owner?.[0] || '').replace(/[^0-9]/g, '')}@s.whatsapp.net`;
@@ -297,7 +300,13 @@ export async function handleMiscCommand(ctx) {
       return true;
     }
 
-    case 'delowner': {
+    case 'delowner':
+    case 'delown':
+    case 'owndel':
+    case 'hapusowner':
+    case 'hapusown':
+    case 'removeowner':
+    case 'removeown': {
       const cleanSender = m.sender ? (m.sender.split(':')[0].split('@')[0] + '@s.whatsapp.net') : '';
       const botNumber = await Promise.resolve(sock.decodeJid(sock.user.id));
       const superOwnerJid = `${(globalState.owner?.[0] || '').replace(/[^0-9]/g, '')}@s.whatsapp.net`;

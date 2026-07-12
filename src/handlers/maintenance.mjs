@@ -37,7 +37,8 @@ export async function handleMaintenanceCommand(ctx) {
     }
     case 'fitur':
     case 'ttf':
-    case 'totalfitur': {
+    case 'totalfitur':
+    case 'totalfit': {
       reply(buildFiturText());
       return true;
     }

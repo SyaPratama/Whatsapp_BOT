@@ -39,10 +39,12 @@ const DEFAULT_MIN_SEND_DELAY_MS = 1500;
 const DEFAULT_GLOBAL_MAX_PER_WINDOW = 30;
 const DEFAULT_WINDOW_MS = 60 * 1000;
 const PLATFORM_BROWSER = {
-  android: ['Ubuntu', 'Chrome', '22.04.4'],
-  iphone: ['Mac OS', 'Safari', '17.2'],
-  mac: ['Mac OS', 'Chrome', '124.0.0.0'],
-  desktop: ['Windows', 'Chrome', '124.0.0.0']
+  android:     ['Android', 'Chrome', '126.0.6478.71'],
+  iphone:      ['iPhone', 'Safari', '17.2'],
+  mac:         ['macOS', 'Chrome', '126.0.6478.71'],
+  desktop:     ['Windows', 'Chrome', '126.0.6478.71'],
+  // WA Business lebih kompatibel dengan Ubuntu browser string
+  wa_business: ['Ubuntu', 'Chrome', '126.0.6478.71']
 };
 
 async function loadAuthState(sessionDir) {
@@ -51,7 +53,7 @@ async function loadAuthState(sessionDir) {
 }
 
 function buildSocketOptions({ version, state, logger, platform, msgRetryCounterCache, groupMetaCache, store }) {
-  const browser = PLATFORM_BROWSER[platform] || Browsers('Chrome');
+  const browser = PLATFORM_BROWSER[platform] || PLATFORM_BROWSER.desktop;
 
   return {
     version,
@@ -93,7 +95,7 @@ function createSocketManager({
   usePairingCode = false,
   pairingNumber = '',
   pairingPhoneCode = '',
-  platform = 'android',
+  platform = 'desktop',
   onPairingCode = null,
   onQr = null,
   onConnectionUpdate = null,
@@ -166,15 +168,17 @@ function createSocketManager({
   function requestPairingIfNeeded() {
     if (!usePairingCode || pairingRequested) return;
     if (!sock || typeof sock.requestPairingCode !== 'function') return;
-    if (!/^\d{8,}$/.test(pairingNumber)) {
-      logger.warn({ pairingNumber }, 'usePairingCode is true but pairingNumber is empty or invalid. Skipping pairing code request (will fallback to QR if enabled).');
+    const cleanNumber = String(pairingNumber || '').replace(/[^0-9]/g, '');
+    if (!/^\d{8,}$/.test(cleanNumber)) {
+      logger.warn({ pairingNumber }, 'usePairingCode is true but pairingNumber is empty or invalid. Skipping pairing code request.');
       return;
     }
     pairingRequested = true;
-    // Delay pairing request slightly to allow socket to initialize
+    // Wait 2s after connection.update fires before requesting
     setTimeout(() => {
       if (!sock || shutdownRequested) return;
-      sock.requestPairingCode(pairingNumber, pairingPhoneCode || undefined)
+      logger.info({ number: cleanNumber }, 'Requesting pairing code...');
+      sock.requestPairingCode(cleanNumber)
         .then((code) => {
           if (typeof onPairingCode === 'function') onPairingCode(code);
           else console.log(`\n[bot] Pairing code: ${code}\n[bot] Masukkan kode ini di WhatsApp > Linked Devices > Link with phone number\n`);
@@ -183,7 +187,7 @@ function createSocketManager({
           logger.warn({ err: error.message }, 'requestPairingCode failed');
           pairingRequested = false; // Allow retry on next connection
         });
-    }, 3000);
+    }, 2000);
   }
 
   async function handleConnectionUpdate(update) {
@@ -193,17 +197,16 @@ function createSocketManager({
       onQr(qr);
     }
 
-    // Request pairing code when creds are not yet registered (correct timing per docs)
     if (connection === 'open') {
       reconnectAttempts = 0;
       logger.info('connection open');
     }
 
-    if (update.qr === undefined && connection === 'connecting') {
-      // Pairing code mode: request when socket is ready, not on QR
-      if (usePairingCode && sock && !sock.authState.creds.registered) {
-        requestPairingIfNeeded();
-      }
+    // Request pairing code: Baileys docs say to call requestPairingCode
+    // when connection.update fires and creds are not yet registered.
+    // Best window is right when 'connecting' starts (before QR would appear).
+    if (connection === 'connecting' && usePairingCode && sock && !sock.authState.creds.registered) {
+      requestPairingIfNeeded();
     }
 
     if (typeof onConnectionUpdate === 'function') {

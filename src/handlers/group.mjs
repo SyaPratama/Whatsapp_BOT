@@ -6,8 +6,12 @@ export async function handleGroupCommand(ctx) {
   const { command, reply, sock, m, isGroup, isAdmins, isOwner, isBotAdmins, q, args, participants, globalState, botNumber } = ctx;
 
   switch (command) {
+    case 'promote':
+    case 'naik':
+    case 'up':
     case 'demote':
-    case 'promote': {
+    case 'turun':
+    case 'down': {
       if (!isGroup) return reply('❌ Fitur hanya untuk grup.');
       if (!isAdmins && !isOwner) return reply('❌ Hanya admin grup.');
       if (!isBotAdmins) return reply('❌ Bot harus menjadi admin grup.');
@@ -27,13 +31,16 @@ export async function handleGroupCommand(ctx) {
         return reply(`❌ Format tidak sesuai!\nGunakan: .${command} [nomor/tag/reply]`);
       }
 
-      const action = command === 'demote' ? 'demote' : 'promote';
+      const action = ['demote', 'turun', 'down'].includes(command) ? 'demote' : 'promote';
       await sock.groupParticipantsUpdate(m.chat, [targetJid], action);
       await sock.sendMessage(m.chat, { text: `Sukses ${action} @${targetJid.split('@')[0]}`, mentions: [targetJid] }, { quoted: m });
       return true;
     }
 
-    case 'kick': {
+    case 'kick':
+    case 'tendang':
+    case 'keluarkan':
+    case 'remove': {
       if (!isGroup) return reply('❌ Fitur hanya untuk grup.');
       if (!isAdmins && !isOwner) return reply('Khusus Admin!!');
       if (!isBotAdmins) return reply('_Bot Harus Menjadi Admin Terlebih Dahulu_');
@@ -50,7 +57,7 @@ export async function handleGroupCommand(ctx) {
       }
 
       if (!targetJid || targetJid.replace(/[^0-9]/g, '').length < 5) {
-        return reply(`❌ Format tidak sesuai!\nGunakan: .kick [nomor/tag/reply]`);
+        return reply(`❌ Format tidak sesuai!\nGunakan: .${command} [nomor/tag/reply]`);
       }
 
       await sock.groupParticipantsUpdate(m.chat, [targetJid], 'remove');
@@ -58,7 +65,9 @@ export async function handleGroupCommand(ctx) {
     }
 
     case 'hidetag':
-    case 'h': {
+    case 'h':
+    case 'ht':
+    case 'hide': {
       if (!isGroup) return reply('❌ Fitur hanya untuk grup.');
       if (!isAdmins && !isOwner) return reply('❌ Hanya admin grup.');
       if (!isBotAdmins) return reply('❌ Bot harus menjadi admin grup.');
@@ -77,7 +86,9 @@ export async function handleGroupCommand(ctx) {
       return true;
     }
 
-    case 'linkgc': {
+    case 'linkgc':
+    case 'linkgroup':
+    case 'tautangroup': {
       if (!isGroup) return reply('❌ Fitur hanya untuk grup.');
       if (!isAdmins && !isOwner) return reply('❌ Hanya admin grup.');
       if (!isBotAdmins) return reply('❌ Bot harus menjadi admin grup.');
@@ -87,7 +98,10 @@ export async function handleGroupCommand(ctx) {
       return true;
     }
 
-    case 'resetlinkgc': {
+    case 'resetlinkgc':
+    case 'revokelinkgc':
+    case 'resetlink':
+    case 'tautanbaru': {
       if (!isGroup) return reply('❌ Fitur hanya untuk grup.');
       if (!isAdmins && !isOwner) return reply('❌ Hanya admin grup.');
       if (!isBotAdmins) return reply('❌ Bot harus menjadi admin grup.');
@@ -98,7 +112,9 @@ export async function handleGroupCommand(ctx) {
     }
 
     case 'buka':
-    case 'open': {
+    case 'open':
+    case 'opgc':
+    case 'bukagrup': {
       if (!isGroup) return reply('❌ Fitur ini hanya dapat digunakan di dalam grup.');
       if (!isAdmins && !isOwner) return reply('❌ Hanya admin grup yang bisa membuka grup.');
       if (!isBotAdmins) return reply('❌ Bot harus menjadi admin grup terlebih dahulu.');
@@ -109,7 +125,9 @@ export async function handleGroupCommand(ctx) {
     }
 
     case 'tutup':
-    case 'close': {
+    case 'close':
+    case 'clgc':
+    case 'tutupgrup': {
       if (!isGroup) return reply('❌ Fitur ini hanya dapat digunakan di dalam grup.');
       if (!isAdmins && !isOwner) return reply('❌ Hanya admin grup yang bisa menutup grup.');
       if (!isBotAdmins) return reply('❌ Bot harus menjadi admin grup terlebih dahulu.');
@@ -119,7 +137,10 @@ export async function handleGroupCommand(ctx) {
       return true;
     }
 
-    case 'o': {
+    case 'o':
+    case 'tagall':
+    case 'semua':
+    case 'everyone': {
       if (!isGroup) return reply('❌ Fitur hanya untuk grup.');
       if (!isAdmins && !isOwner) return reply('❌ Hanya admin grup yang bisa menggunakan perintah ini.');
       if (!isBotAdmins) return reply('❌ Bot harus menjadi admin grup untuk tag semua anggota.');
@@ -129,10 +150,12 @@ export async function handleGroupCommand(ctx) {
       return true;
     }
 
-    case 'antilink': {
+    case 'antilink':
+    case 'blocklink':
+    case 'tolaklink': {
       if (!isGroup) return reply('❌ Fitur hanya untuk grup.');
       if (!isAdmins && !isOwner) return reply('❌ Hanya admin grup.');
-      if (!args[0]) return reply('📌 .antilink group on/off\n.antilink channel on/off\n.antilink all on/off');
+      if (!args[0]) return reply(`📌 .${command} group on/off\n.${command} channel on/off\n.${command} all on/off`);
 
       const sub = args[0].toLowerCase();
       const action = args[1]?.toLowerCase();
@@ -152,7 +175,8 @@ export async function handleGroupCommand(ctx) {
       return true;
     }
 
-    case 'testlink': {
+    case 'testlink':
+    case 'ceklink': {
       if (!isOwner) return reply('❌ Hanya owner.');
       const setting = globalState.antilink?.[m.chat] || {};
       reply(`📊 *Status Anti-Link Grup Ini*\n\n▪️ Group Link : ${setting.group ? '✅ AKTIF' : '❌ NONAKTIF'}\n▪️ Channel Link: ${setting.channel ? '✅ AKTIF' : '❌ NONAKTIF'}\n▪️ All Link : ${setting.all ? '✅ AKTIF' : '❌ NONAKTIF'}`);

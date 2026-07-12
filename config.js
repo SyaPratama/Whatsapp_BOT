@@ -16,7 +16,7 @@ global.thumb = 'https://athars.space/uploads/3fad0629.jpeg'
 global.usePairingCode = true
 global.pairingNumber = ''
 global.pairingPhoneCode = ''
-global.platform = 'android'
+global.platform = 'wa_business'
 
 global.antilinkRegex = {
     group: /chat\.whatsapp\.com\/(?:invite|join)/i,

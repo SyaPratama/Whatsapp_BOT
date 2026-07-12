@@ -16,7 +16,8 @@ export async function handleSystemCommand(ctx) {
     case 'owner':
     case 'own':
     case 'dev':
-    case 'developerbot': {
+    case 'developerbot':
+    case 'pembuat': {
       const contacts = (globalState.owner || []).map((item, index) => {
         const num = item.replace(/[^0-9]/g, '');
         const name = index === 0 ? (globalState.namaown || 'Owner Utama') : `Owner Tambahan ${index}`;
@@ -40,7 +41,11 @@ export async function handleSystemCommand(ctx) {
     }
 
     case 'cekowner':
-    case 'checkowner': {
+    case 'checkowner':
+    case 'cekown':
+    case 'co':
+    case 'listowner':
+    case 'daftarowner': {
       if (!globalState.owner || globalState.owner.length < 1) {
         return reply('Belum ada owner yang terdaftar.');
       }
@@ -61,14 +66,16 @@ export async function handleSystemCommand(ctx) {
 
     case 'rt':
     case 'runtime':
-    case 'uptime': {
+    case 'uptime':
+    case 'botrun': {
       reply(`_${runtime(process.uptime())}_`);
       return true;
     }
 
     case 'ping':
     case 'speed':
-    case 'pings': {
+    case 'pings':
+    case 'tes': {
       const start = Date.now();
       await sock.sendMessage(m.chat, { text: '🏓 Testing speed...' }, { quoted: m });
       const ping = Date.now() - start;
@@ -77,7 +84,9 @@ export async function handleSystemCommand(ctx) {
       return true;
     }
 
-    case 'addvip': {
+    case 'addvip':
+    case 'vipadd':
+    case 'tambahvip': {
       if (!isOwner) return reply('❌ Hanya owner.');
       
       const quotedSender = m.quoted?.sender;
@@ -109,7 +118,10 @@ export async function handleSystemCommand(ctx) {
       return true;
     }
 
-    case 'delvip': {
+    case 'delvip':
+    case 'vipdel':
+    case 'hapusvip':
+    case 'removevip': {
       if (!isOwner) return reply('❌ Hanya owner.');
       
       const quotedSender = m.quoted?.sender;
@@ -139,7 +151,9 @@ export async function handleSystemCommand(ctx) {
       return true;
     }
 
-    case 'listvip': {
+    case 'listvip':
+    case 'viplist':
+    case 'daftarvip': {
       if (!isOwner) return reply('❌ Hanya owner.');
       const data = loadVIP();
       const now = Date.now();
@@ -158,14 +172,16 @@ export async function handleSystemCommand(ctx) {
       return true;
     }
 
-    case 'self': {
+    case 'self':
+    case 'mode-self': {
       if (!isOwner) return reply('❌ Hanya owner yang bisa mengubah mode ini.');
       globalState.self = true;
       reply('🤖 Bot mode SELF berhasil diaktifkan.');
       return true;
     }
 
-    case 'public': {
+    case 'public':
+    case 'mode-public': {
       if (!isOwner) return reply('❌ Hanya owner.');
       globalState.self = false;
       reply('🤖 Bot mode PUBLIC berhasil diaktifkan.');

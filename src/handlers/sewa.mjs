@@ -154,7 +154,10 @@ export async function handleSewaCommand(ctx) {
 
   switch (command) {
     case 'sewa':
-    case 'sewabot': {
+    case 'sewabot':
+    case 'order':
+    case 'pesanbot':
+    case 'infosewa': {
       if (!isOwner && ['add', 'remove', 'list'].includes(sub)) {
         return reply('❌ FITUR INI KHUSUS OWNER.');
       }
@@ -168,7 +171,7 @@ export async function handleSewaCommand(ctx) {
           const customer = (args.slice(mentioned.length ? 2 : 3).join(' ') || '').trim();
 
           if (!targetJid || Number.isNaN(days) || days < 1) {
-            return reply('FORMAT: .sewa add @user <hari>\nCONTOH: .sewa add @628xxx 7');
+            return reply(`FORMAT: .${command} add @user <hari>\nCONTOH: .${command} add @628xxx 7`);
           }
 
           if (typeof targetJid === 'string' && /^https?:\/\//i.test(targetJid)) {
@@ -203,7 +206,7 @@ _AKSES PRO SUDAH AKTIF._`);
         if (sub === 'remove') {
           const mentioned = m.mentionedJid || [];
           const targetJid = mentioned[0] || args[1];
-          if (!targetJid) return reply('FORMAT: .sewa remove @user');
+          if (!targetJid) return reply(`FORMAT: .${command} remove @user`);
           if (!removeSewa(globalState, targetJid)) return reply('❌ USER TIDAK TERDAFTAR SEWA.');
           return reply(`✅ SEWA @${targetJid.split('@')[0]} DIHAPUS.`);
         }
@@ -238,8 +241,8 @@ CONTOH HARGA:
  • 30 HARI = ${formatRupiah(PRICE_PER_DAY * 30)}
 
 CARA ORDER:
-.sewa <jumlah_hari>
-CONTOH: .sewa 7`);
+.${command} <jumlah_hari>
+CONTOH: .${command} 7`);
       }
 
       const allowedPackages = new Set([1, 3, 7, 14, 30]);
@@ -283,7 +286,9 @@ _AKSES PRO AKTIF OTOMATIS SETELAH PEMBAYARAN TERVERIFIKASI._`;
     }
 
     case 'ceksewa':
-    case 'cek': {
+    case 'cek':
+    case 'statussewa':
+    case 'sewaaktif': {
       if (!globalState.sewaDb) globalState.sewaDb = loadSewaDb();
 
       if (!isOwner && (m.mentionedJid?.length || args[0])) {

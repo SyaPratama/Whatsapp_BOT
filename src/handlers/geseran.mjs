@@ -72,7 +72,9 @@ export async function handleGeseranCommand(ctx) {
   const userId = m.sender;
 
   switch (command) {
-    case 'geseran': {
+    case 'geseran':
+    case 'bagi':
+    case 'claim': {
       if (!isGroup) return reply('❌ Fitur hanya untuk grup.');
       if (!isAdmins && !isOwner) return reply('❌ Hanya admin grup.');
       if (!globalState.db_lw[userId]) return reply('❌ Anda belum buka sesi LW. Ketik .openlw dulu.');
@@ -87,7 +89,9 @@ export async function handleGeseranCommand(ctx) {
       if (!ok) return reply('⚠️ Masih ada sesi geseran aktif. Gunakan .stopgeseran');
       return reply(`🎉 *GESERAN DIMULAI* 🎉\n\n🎯 Target: ${targetCount} orang\n💰 Saldo: ${amount} per orang\n📢 Kirim *nickname* (tanpa prefix) untuk claim.\n⏰ Waktu: 5 menit\n*Bot akan diam, notifikasi hanya saat selesai.*\n*Satu nomor WA hanya bisa satu nickname!*`);
     }
-    case 'stopgeseran': {
+    case 'stopgeseran':
+    case 'hentikangeseran':
+    case 'tutupgeseran': {
       if (!isGroup) return reply('❌ Hanya untuk grup.');
       if (!isAdmins && !isOwner) return reply('❌ Hanya admin.');
       if (!globalState.geseran[m.chat]) return reply('Tidak ada sesi geseran aktif.');

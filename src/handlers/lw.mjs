@@ -48,20 +48,19 @@ function buildLwSummary(db) {
   const today = new Date();
   const hari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'][today.getDay()];
 
-  let text = `| 🥷 *ADMIN : ${db.admin}*\n`;
-  text += `| 📱 *DEVIC : ${db.dev}*\n`;
-  text += `| 🎲 *ROLL : ${db.roll}*\n`;
-  text += `| ⌚ *TIME : ${db.waktu}*\n`;
-  text += `| 💰 *DANA : ${db.dana}*\n\n`;
+  let text = `🥷 *ADMIN : ${db.admin}*\n`;
+  text += `📱 *DEVIC : ${db.dev}*\n`;
+  text += `🎲 *ROLL : ${db.roll}*\n`;
+  text += `⌚ *TIME : ${db.waktu}*\n`;
+  text += `💰 *DANA : ${db.dana}*\n\n`;
   text += `${hari}, ${today.toLocaleDateString('id-ID')}\n`;
   db.games.forEach((res, index) => {
     text += `GAME ${index + 1} : ${res}\n`;
   });
   text += `\nSALDO: *(${totalDPR})*\n`;
   sortedPlayers.forEach(([name, data], index) => {
-    const wsLabel = data.ws >= 2 ? ` { WS ${data.ws}× }` : '';
     const crown = index === 0 ? ' 👑' : '';
-    text += `${name.toUpperCase()} ${data.saldo}${wsLabel}${crown}\n`;
+    text += `${name.toUpperCase()} ${data.saldo}${crown}\n`;
   });
   text += `\nMINUS: *(-${totalRakyat})*\n`;
   db.miskin.forEach((item) => {
@@ -114,7 +113,9 @@ export async function handleLwCommand(ctx) {
 
   switch (command) {
     case 'lk':
-    case 'lb': {
+    case 'listk':
+    case 'lb':
+    case 'listb': {
       if (!m.text.startsWith(ctx.prefix)) return true;
       if (!isOwner && !isVIP(m.sender)) return reply('❌ Fitur khusus VIP.');
 
@@ -128,13 +129,15 @@ export async function handleLwCommand(ctx) {
       const isLF = nominalRaw.toLowerCase().includes('lf');
       if (Number.isNaN(nominal) || nominal <= 0) return reply('🜲 *Nominal harus angka!*');
 
-      const team = command === 'lk' ? 'K' : 'B';
+      const team = ['lk', 'listk'].includes(command) ? 'K' : 'B';
       list[team].push({ nama, nominal, mark: isLF ? 'lf' : '' });
       reply(`✔ *BERHASIL DITAMBAHKAN* 🜲\n► Team: *${team}*\n► Nama: *${nama}*\n► Nominal: *${nominal}${isLF ? 'lf' : ''}*`);
       return true;
     }
 
-    case 'resetlist': {
+    case 'resetlist':
+    case 'clearlist':
+    case 'hapuslist': {
       if (!m.text.startsWith(ctx.prefix)) return true;
       if (!isOwner && !isVIP(m.sender)) return reply('❌ Fitur khusus VIP.');
       globalState.autoList[m.chat] = { K: [], B: [] };
@@ -143,17 +146,23 @@ export async function handleLwCommand(ctx) {
     }
 
     case 'tlk':
+    case 'tambahk':
     case 'klk':
+    case 'kurangk':
     case 'hlk':
+    case 'hapusk':
     case 'tlb':
+    case 'tambahb':
     case 'klb':
-    case 'hlb': {
+    case 'kurangb':
+    case 'hlb':
+    case 'hapusb': {
       if (!m.text.startsWith(ctx.prefix)) return true;
       if (!isOwner && !isVIP(m.sender)) return reply('❌ Fitur khusus VIP.');
       const list = ensureAutoList(globalState, m.chat);
-      const team = ['tlk', 'klk', 'hlk'].includes(command) ? 'K' : 'B';
+      const team = ['tlk', 'tambahk', 'klk', 'kurangk', 'hlk', 'hapusk'].includes(command) ? 'K' : 'B';
       const parts = q.trim().split(/\s+/);
-      if (command === 'hlk' || command === 'hlb') {
+      if (['hlk', 'hlb', 'hapusk', 'hapusb'].includes(command)) {
         const nama = q.trim();
         if (!nama) return reply(`🜲 *Format:* .${command} Nama\n► *Contoh:* .${command} fierlyy`);
         const idx = list[team].findIndex((item) => item.nama.toLowerCase() === nama.toLowerCase());
@@ -183,7 +192,9 @@ export async function handleLwCommand(ctx) {
       return reply(`✔ *BERHASIL DIKURANGI* 🜲\n► Team: ${team}\n► Nama: ${nama}\n► Nominal: ${current} → *${next}* (berkurang ${delta})`);
     }
 
-    case 'lw': {
+    case 'lw':
+    case 'rekap':
+    case 'status': {
       if (!isOwner && !isVIP(m.sender)) return reply('❌ Fitur khusus VIP.');
       const db = ensureDb(globalState, userId);
       if (!db) return reply('Anda belum buka sesi LW. Ketik .openlw dulu.');
@@ -191,7 +202,9 @@ export async function handleLwCommand(ctx) {
       return true;
     }
 
-    case 'wd': {
+    case 'wd':
+    case 'players':
+    case 'saldo': {
       if (!isOwner && !isVIP(m.sender)) return reply('❌ Fitur khusus VIP.');
       const db = ensureDb(globalState, userId);
       if (!db) return reply('Buka sesi LW dulu!');
@@ -199,7 +212,9 @@ export async function handleLwCommand(ctx) {
       return true;
     }
 
-    case 'back': {
+    case 'back':
+    case 'batal':
+    case 'undo': {
       if (!isOwner && !isVIP(m.sender)) return reply('❌ Fitur khusus VIP.');
       const db = ensureDb(globalState, userId);
       if (!db) return reply('Buka sesi LW dulu!');
@@ -212,7 +227,9 @@ export async function handleLwCommand(ctx) {
       return true;
     }
 
-    case 'delsaldo': {
+    case 'delsaldo':
+    case 'potongsaldo':
+    case 'kurangisaldo': {
       if (!isOwner && !isVIP(m.sender)) return reply('❌ Fitur khusus VIP.');
       const db = ensureDb(globalState, userId);
       if (!db) return reply('Buka sesi LW dulu.');
@@ -229,7 +246,9 @@ export async function handleLwCommand(ctx) {
       return reply(`✅ Saldo ${playerKey} berkurang ${jumlah}.`);
     }
 
-    case 'geser': {
+    case 'geser':
+    case 'transfer':
+    case 'tf': {
       if (!isOwner && !isVIP(m.sender)) return reply('❌ Fitur khusus VIP.');
       const db = ensureDb(globalState, userId);
       if (!db) return reply('Buka sesi LW dulu.');
@@ -249,7 +268,9 @@ export async function handleLwCommand(ctx) {
       return reply(`✅ Transfer ${amount} dari ${fromKey} ke ${toKey || penerima.toLowerCase()} berhasil.`);
     }
 
-    case 'editsaldo': {
+    case 'editsaldo':
+    case 'ubahsaldo':
+    case 'setsaldo': {
       if (!isOwner && !isVIP(m.sender)) return reply('❌ Fitur khusus VIP.');
       const db = ensureDb(globalState, userId);
       if (!db) return reply('Buka sesi LW dulu.');
@@ -280,7 +301,9 @@ export async function handleLwCommand(ctx) {
       return reply(`✅ Saldo ${(playerKey || nama).toUpperCase()} diubah: ${saldoLama} → ${saldoBaru}`);
     }
 
-    case 'bulatkan': {
+    case 'bulatkan':
+    case 'bulat':
+    case 'floor': {
       if (!isOwner && !isVIP(m.sender)) return reply('❌ Fitur khusus VIP.');
       const db = ensureDb(globalState, userId);
       if (!db) return reply('Buka sesi LW dulu.');
@@ -301,7 +324,8 @@ export async function handleLwCommand(ctx) {
     }
 
     case 'tslf':
-    case 'tambahslf': {
+    case 'tambahslf':
+    case 'tambahhutang': {
       if (!isOwner && !isVIP(m.sender)) return reply('❌ Fitur khusus VIP.');
       const db = ensureDb(globalState, userId);
       if (!db) return reply('Buka sesi LW dulu.');
@@ -321,7 +345,8 @@ export async function handleLwCommand(ctx) {
       return reply(`✅ Hutang ${nama.toUpperCase()} +${jumlah}lf, total: ${hutangBaru}lf`);
     }
 
-    case 'dslf': {
+    case 'dslf':
+    case 'kurangihutang': {
       if (!isOwner && !isVIP(m.sender)) return reply('❌ Fitur khusus VIP.');
       const db = ensureDb(globalState, userId);
       if (!db) return reply('Buka sesi LW dulu.');
@@ -343,7 +368,9 @@ export async function handleLwCommand(ctx) {
       return reply(`✅ Hutang ${nama.toUpperCase()} berkurang ${jumlah}, sisa: ${hutangBaru}lf`);
     }
 
-    case 'lunas': {
+    case 'lunas':
+    case 'lunashutang':
+    case 'lunasin': {
       if (!isOwner && !isVIP(m.sender)) return reply('❌ Fitur khusus VIP.');
       const db = ensureDb(globalState, userId);
       if (!db) return reply('Buka sesi LW dulu.');
@@ -355,7 +382,9 @@ export async function handleLwCommand(ctx) {
       return reply(`✅ ${nama.toUpperCase()} lunas dan dihapus dari daftar hutang.`);
     }
 
-    case 'hapus': {
+    case 'hapus':
+    case 'hapusplayer':
+    case 'kickplayer': {
       if (!isOwner && !isVIP(m.sender)) return reply('❌ Fitur khusus VIP.');
       const db = ensureDb(globalState, userId);
       if (!db) return reply('Buka sesi LW dulu.');
@@ -374,7 +403,9 @@ export async function handleLwCommand(ctx) {
       return reply(found ? `✅ Data ${nama.toUpperCase()} dihapus.` : `❌ ${nama.toUpperCase()} tidak ditemukan.`);
     }
 
-    case 'cbl': {
+    case 'cbl':
+    case 'cekbal':
+    case 'balance': {
       if (!isOwner && !isVIP(m.sender)) return reply('❌ Fitur khusus VIP.');
       if (!m.quoted) return reply('Reply list taruhan!');
       const parsed = scanPlayers(m.quoted.text);
@@ -395,7 +426,9 @@ export async function handleLwCommand(ctx) {
       return true;
     }
 
-    case 'r': {
+    case 'r':
+    case 'rekaplist':
+    case 'rekapantrian': {
       if (!isOwner && !isVIP(m.sender)) return reply('❌ Fitur khusus VIP.');
       if (!m.quoted) return reply('Reply list taruhan!');
       const parsed = scanPlayers(m.quoted.text);
@@ -412,14 +445,18 @@ export async function handleLwCommand(ctx) {
       return true;
     }
 
-    case 'listkb': {
-      if (!isVIP && !isOwner) return reply('Fitur ini khusus user VIP king!');
+    case 'listkb':
+    case 'ceklist':
+    case 'showlist':
+    case 'list': {
+      if (!isOwner && !isVIP(m.sender)) return reply('Fitur ini khusus user VIP king!');
       if (!globalState.db_lw[m.chat]) return reply('Buka sesi LW dulu dengan .openlw');
       reply('K:\n\n\nB:\n\n\n');
       return true;
     }
 
-    case 'setlw': {
+    case 'setlw':
+    case 'templatelw': {
       if (!isOwner && !isVIP(m.sender)) return reply('❌ Fitur khusus VIP.');
       if (!q) return reply('Format: .setlw Admin|Hp|Roll|Waktu|Dana');
       const info = q.split('|');
@@ -436,7 +473,9 @@ export async function handleLwCommand(ctx) {
       return reply(`✅ Template LW untuk *${namaAdm}* berhasil disimpan!`);
     }
 
-    case 'openlw': {
+    case 'openlw':
+    case 'bukalw':
+    case 'mulailw': {
       if (!isOwner && !isVIP(m.sender)) return reply('❌ Fitur khusus VIP.');
       if (!q) return reply('Gunakan: .openlw [Nama Template]');
       const template = globalState.db_lw.templates ? globalState.db_lw.templates[q.trim()] : null;
@@ -455,7 +494,9 @@ export async function handleLwCommand(ctx) {
       return reply(`✅ *SESI LW DIBUKA DENGAN TEMPLATE ${template.admin}*\n\n👤 Admin : ${template.admin}\n📱 Device : ${template.dev}\n🎲 Roll : ${template.roll}\n⌚ Waktu : ${template.waktu}\n💰 Dana : ${template.dana}`);
     }
 
-    case 'depo': {
+    case 'depo':
+    case 'deposit':
+    case 'tambahsaldo': {
       if (!isOwner && !isVIP(m.sender)) return reply('❌ Fitur khusus VIP.');
       const db = ensureDb(globalState, userId);
       if (!db) return reply('Anda belum buka sesi LW.');
@@ -484,7 +525,9 @@ export async function handleLwCommand(ctx) {
     }
 
     case 'chasil':
-    case 'hasil': {
+    case 'hasil':
+    case 'cekhasil':
+    case 'feeadmin': {
       if (!isOwner && !isVIP(m.sender)) return reply('❌ Fitur khusus VIP.');
       const db = ensureDb(globalState, userId);
       if (!db) return reply('❌ Sesi LW tidak ditemukan. Ketik .openlw dulu.');
@@ -513,7 +556,9 @@ export async function handleLwCommand(ctx) {
       return reply(msg);
     }
 
-    case 'fee': {
+    case 'fee':
+    case 'cekfee':
+    case 'hitungfee': {
       if (!isOwner && !isVIP(m.sender)) return reply('❌ Fitur khusus VIP.');
       if (!m.quoted) return reply('📌 Reply list taruhan.');
       const db = ensureDb(globalState, userId);
@@ -547,7 +592,9 @@ export async function handleLwCommand(ctx) {
     }
 
     case 'k':
-    case 'b': {
+    case 'kiri':
+    case 'b':
+    case 'kanan': {
       if (!m.text.startsWith(ctx.prefix)) return true;
       if (!isOwner && !isVIP(m.sender)) return reply('❌ Fitur khusus VIP.');
       const db = ensureDb(globalState, userId);
@@ -560,7 +607,7 @@ export async function handleLwCommand(ctx) {
       const skor = parts[1] && parts[1].includes('-') ? parts[1] : null;
       const angkaDadu = !skor ? (parts[1] ? parts[1].replace(/[^0-9]/g, '') : '') : '';
       const teksTambahan = parts.slice(skor ? 1 : 2).join(' ');
-      const side = command.toUpperCase();
+      const side = ['k', 'kiri'].includes(command) ? 'K' : 'B';
       let totalNominalMenang = 0;
       let totalFee = 0;
       const gameSession = [...parsed.k, ...parsed.b].map((player) => {
@@ -629,15 +676,17 @@ export async function handleLwCommand(ctx) {
         }
       }
 
-      let gameRecord = skor ? `${side} ${skor} (${totalNominalMenang}) // ${totalFee}` : `${side}${angkaDadu} (${totalNominalMenang}) // ${totalFee}`;
-      if (teksTambahan) gameRecord += ` // ${teksTambahan}`;
+      let gameRecord = skor ? `${side} ${skor} (${totalNominalMenang}) ${totalFee}` : `${side}${angkaDadu} (${totalNominalMenang}) ${totalFee}`;
+      if (teksTambahan) gameRecord += ` ${teksTambahan}`;
       db.games.push(gameRecord);
       reply(buildLwSummary(db) + `\n_Ketik .back jika ada kesalahan input_`);
       return true;
     }
 
     case 'wk':
-    case 'wb': {
+    case 'wsk':
+    case 'wb':
+    case 'wsb': {
       if (!m.text.startsWith(ctx.prefix)) return true;
       if (!isOwner && !isVIP(m.sender)) return reply('❌ Fitur khusus VIP.');
       const db = ensureDb(globalState, userId);
@@ -650,7 +699,7 @@ export async function handleLwCommand(ctx) {
       const skor = parts[1] && parts[1].includes('-') ? parts[1] : null;
       const angkaDadu = !skor ? (parts[1] ? parts[1].replace(/[^0-9]/g, '') : '') : '';
       const teksTambahan = parts.slice(skor ? 1 : 2).join(' ');
-      const side = command === 'wk' ? 'K' : 'B';
+      const side = ['wk', 'wsk'].includes(command) ? 'K' : 'B';
       let totalNominalMenang = 0;
       let totalFee = 0;
       const gameSession = [...parsed.k, ...parsed.b].map((player) => {
@@ -727,7 +776,8 @@ export async function handleLwCommand(ctx) {
     }
 
     case 'resetlw':
-    case 'closelw': {
+    case 'closelw':
+    case 'hapuslw': {
       if (!isOwner && !isVIP(m.sender)) return reply('❌ Fitur khusus VIP.');
       if (!globalState.db_lw[userId]) return reply('Anda belum membuka sesi LW. Ketik .openlw dulu.');
       delete globalState.db_lw[userId];
@@ -735,7 +785,8 @@ export async function handleLwCommand(ctx) {
       return true;
     }
 
-    case 'dellw': {
+    case 'dellw':
+    case 'deletelw': {
       if (!isOwner && !isVIP(m.sender)) return reply('❌ Fitur khusus VIP.');
       if (!q) return reply("Format: .dellw [Nama Admin]");
       

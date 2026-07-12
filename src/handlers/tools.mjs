@@ -30,7 +30,9 @@ export async function handleToolsCommand(ctx) {
   } = ctx;
 
   switch (command) {
-    case 'autoread': {
+    case 'autoread':
+    case 'bacaotomatis':
+    case 'readon': {
       if (!isOwner) return reply('❌ Hanya owner.');
       const action = (args[0] || '').toLowerCase();
       if (action === 'on') {
@@ -47,7 +49,9 @@ export async function handleToolsCommand(ctx) {
     case 'hd':
     case 'tohd':
     case 'Enhanced':
-    case 'remini': {
+    case 'remini':
+    case 'penjernih':
+    case 'hdkan': {
       if (!m.quoted) return reply('Fotonya mana?');
       const mime = (m.quoted.msg || m.quoted).mimetype || '';
       if (!/image/.test(mime)) return reply(`Send/Reply Foto dengan caption ${ctx.prefix || '.'}${command}`);
@@ -68,7 +72,8 @@ export async function handleToolsCommand(ctx) {
       return true;
     }
 
-    case 'tourl': {
+    case 'tourl':
+    case 'upload': {
       if (!m.quoted) return reply('Reply media (foto/video/file) yang mau di upload!');
       const mime = m.quoted.mimetype || '';
       if (!mime) return reply('Media tidak valid!');
@@ -99,7 +104,9 @@ export async function handleToolsCommand(ctx) {
       return true;
     }
 
-    case 'case2plugin': {
+    case 'case2plugin':
+    case 'c2p':
+    case 'casekeplugin': {
       const input = args.join(' ') || (m.quoted && m.quoted.text);
       if (!input) return reply('Kirim code case atau reply case!');
       const nameMatch = input.match(/case\s+["'](.+?)["']:/);
@@ -109,7 +116,9 @@ export async function handleToolsCommand(ctx) {
       return true;
     }
 
-    case 'cjs2esm': {
+    case 'cjs2esm':
+    case 'c2e':
+    case 'cjstoesm': {
       const input = args.join(' ') || (m.quoted && m.quoted.text);
       if (!input) return reply('Kirim kode CJS atau reply file JS!');
       const convertCJS = (code) => code
@@ -154,7 +163,10 @@ export async function handleToolsCommand(ctx) {
       return true;
     }
 
-    case 'setpp': {
+    case 'setpp':
+    case 'setppgroup':
+    case 'setprofilegroup':
+    case 'gantipp': {
       if (!m.isGroup) return reply('❌ Fitur ini hanya bisa digunakan di grup.');
       
       let isBotGroupAdmin = false;
@@ -192,17 +204,20 @@ export async function handleToolsCommand(ctx) {
     }
 
     case 'addcase':
+    case 'tambahcase':
     case 'delcase':
-    case 'listcase': {
+    case 'hapuscase':
+    case 'listcase':
+    case 'daftarcase': {
       if (!isOwner) return reply('❌ Hanya owner.');
       if (!Case) return reply('Library/system belum tersedia.');
       try {
-        if (command === 'addcase') {
+        if (['addcase', 'tambahcase'].includes(command)) {
           if (!text) return reply('case "namacase":{ ... }');
           Case.add(text);
           return reply('✅ Case berhasil ditambahkan.');
         }
-        if (command === 'delcase') {
+        if (['delcase', 'hapuscase'].includes(command)) {
           if (!text) return reply('namaCase');
           Case.delete(text);
           return reply(`✅ Case "${text}" berhasil dihapus.`);
@@ -214,6 +229,7 @@ export async function handleToolsCommand(ctx) {
     }
 
     case 'getcase':
+    case 'ambilcase':
     case 'gc': {
       if (!isOwner) return reply('❌ Hanya owner.');
       if (!q) return reply('Masukkan nama case.\nContoh: .getcase list');
@@ -232,7 +248,9 @@ export async function handleToolsCommand(ctx) {
       return true;
     }
 
-    case 'list': {
+    case 'list':
+    case 'listfitur':
+    case 'daftarfitur': {
       if (!m.text.startsWith(ctx.prefix || '.')) return true;
       if (!isOwner && !isVIP(m.sender)) return reply('❌ Fitur khusus VIP.');
       const list = globalState.autoList?.[m.chat];
@@ -243,7 +261,9 @@ export async function handleToolsCommand(ctx) {
       return true;
     }
 
-    case 'pp': {
+    case 'pp':
+    case 'ppgroup':
+    case 'profilegroup': {
       if (!m.isGroup) return reply('Fitur ini cuma bisa dipake di grup, King!');
       try {
         const ppUrl = await sock.profilePictureUrl(m.chat, 'image').catch(() => 'https://i.ibb.co/vzG72QG/avatar-contact.jpg');
@@ -255,7 +275,8 @@ export async function handleToolsCommand(ctx) {
       return true;
     }
 
-    case 'c': {
+    case 'c':
+    case 'cekantrian': {
       if (!isOwner && !isVIP(m.sender)) return reply('❌ Fitur khusus VIP.');
       if (!m.quoted) return reply('📌 Reply list taruhan.');
       const parsed = scanPlayers(m.quoted.text);
