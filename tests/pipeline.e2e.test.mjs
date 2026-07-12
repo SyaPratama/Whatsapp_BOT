@@ -216,7 +216,7 @@ test('end-to-end: predik outputs valid zone', async () => {
   const { sock, processMessage, sent } = h;
 
   await processMessage(sock, makeMessage({ sender: h.ownerJid, body: '.predik 43-29' }));
-  const predikMessage = sent.find((s) => s.includes('FIERLYY XLYY'));
+  const predikMessage = sent.find((s) => s.includes('GOOGLE ATTACK'));
   assert.ok(predikMessage);
   assert.ok(predikMessage.includes('TARGET'));
 });

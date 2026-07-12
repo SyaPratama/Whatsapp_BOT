@@ -73,98 +73,110 @@ export async function handleMiscCommand(ctx) {
     case 'menu': {
       const { total: TOTAL } = countFeatures();
       const uptimeString = runtime(process.uptime());
-      const mode = globalState.self ? 'Self' : 'Public';
-      const userCount = Object.keys(globalState.db_lw || {}).length || 0;
-      const W = 36;
-      const top = '\u2501'.repeat(W);
-      const mid = '\u2500'.repeat(W);
-      const sections = [
-        { title: 'UTAMA', items: [
-          ['.openlw', 'buka sesi LW'],
-          ['.resetlw', 'hapus sesi LW'],
-          ['.k / .b', 'taruhan (fee 10%)'],
-          ['.wk / .wb', 'taruhan perak (fee)'],
-          ['.cbl', 'cek balance K vs B'],
-          ['.lw', 'rekap lengkap'],
-          ['.wd', 'semua saldo player'],
-          ['.chasil', 'laporan total fee admin'],
-          ['.fee', 'hitung fee per tim'],
-          ['.back', 'restore backup']
-        ] },
-        { title: 'SALDO', items: [
-          ['.depo', 'tambah saldo'],
-          ['.delsaldo', 'kurangi saldo'],
-          ['.editsaldo', 'ubah saldo manual'],
-          ['.geser', 'transfer saldo'],
-          ['.bulatkan', 'bulatkan kelipatan 100'],
-          ['.dslf', 'kurangi hutang LF'],
-          ['.tslf', 'tambah hutang LF'],
-          ['.lunas', 'hapus hutang'],
-          ['.hapus', 'hapus nama']
-        ] },
-        { title: 'LIST', items: [
-          ['.lk / .lb', 'tambah ke tim K/B'],
-          ['.list', 'lihat list'],
-          ['.resetlist', 'kosongkan list'],
-          ['.c', 'cek TF & saldo'],
-          ['.r', 'rekap total & status'],
-          ['.tlk/.klk/.hlk', 'edit tim K'],
-          ['.tlb/.klb/.hlb', 'edit tim B']
-        ] },
-        { title: 'GESERAN', items: [
-          ['.geseran', 'mulai bagi saldo'],
-          ['.stopgeseran', 'hentikan sesi']
-        ] },
-        { title: 'UTILITY', items: [
-          ['.pay', 'instruksi QRIS'],
-          ['.setpp', 'set PP grup'],
-          ['.predik', 'prediksi dadu 9D'],
-          ['.busuk', 'respon lose'],
-          ['.o', 'tag all'],
-          ['.hidetag', 'hidden tag'],
-          ['.getcase', 'ambil source case']
-        ] }
-      ];
+      const mode = globalState.self ? 'SELF' : 'PUBLIC';
       const ver = global.version || '1.0';
-      const labelW = 16;
-      const valueW = W - labelW - 1;
-      const row = (label, value) => {
-        const l = ' ' + label.padEnd(labelW, ' ');
-        const v = ' ' + String(value).padEnd(valueW, ' ');
-        return l + v + ' ';
+
+      const headerText = `╭─────────────────────╮\n│  🤖  *KB BOT v${ver}*  │\n╰─────────────────────╯\n\n📊 *STATUS*\n┣ 🕒 Runtime  : ${uptimeString}\n┣ 🌐 Mode     : ${mode}\n┣ ⚡ Fitur    : ${TOTAL}\n╰────────────────────`;
+
+      const listMessage = {
+        text: headerText,
+        footer: '📌 Pilih kategori untuk melihat perintah',
+        title: '🤖 KB BOT MENU',
+        buttonText: '📋 LIHAT MENU',
+        sections: [
+          {
+            title: '🎶 UTAMA — Sistem Taruhan',
+            rows: [
+              { title: '.openlw', rowId: 'cmd_openlw', description: 'Buka sesi taruhan baru' },
+              { title: '.resetlw', rowId: 'cmd_resetlw', description: 'Reset/hapus sesi LW' },
+              { title: '.k / .b', rowId: 'cmd_kb', description: 'Input taruhan K atau B (fee 10%)' },
+              { title: '.wk / .wb', rowId: 'cmd_wkwb', description: 'Input taruhan perak (fee bertingkat)' },
+              { title: '.cbl', rowId: 'cmd_cbl', description: 'Cek balance K vs B' },
+              { title: '.lw', rowId: 'cmd_lw', description: 'Rekap lengkap semua taruhan' },
+              { title: '.wd', rowId: 'cmd_wd', description: 'Lihat semua saldo player' },
+              { title: '.chasil', rowId: 'cmd_chasil', description: 'Laporan total fee admin' },
+              { title: '.fee', rowId: 'cmd_fee', description: 'Hitung fee per tim' },
+              { title: '.back', rowId: 'cmd_back', description: 'Restore backup data' }
+            ]
+          },
+          {
+            title: '🍨 SALDO & HUTANG',
+            rows: [
+              { title: '.depo', rowId: 'cmd_depo', description: 'Tambah saldo player' },
+              { title: '.delsaldo', rowId: 'cmd_delsaldo', description: 'Kurangi saldo player' },
+              { title: '.editsaldo', rowId: 'cmd_editsaldo', description: 'Ubah saldo secara manual' },
+              { title: '.geser', rowId: 'cmd_geser', description: 'Transfer saldo antar player' },
+              { title: '.bulatkan', rowId: 'cmd_bulatkan', description: 'Bulatkan saldo kelipatan 100' },
+              { title: '.dslf / .tslf', rowId: 'cmd_slf', description: 'Kurangi / tambah hutang LF' },
+              { title: '.lunas', rowId: 'cmd_lunas', description: 'Hapus hutang dari list' },
+              { title: '.hapus', rowId: 'cmd_hapus', description: 'Hapus nama dari database' }
+            ]
+          },
+          {
+            title: '🎈 AUTO LIST & REKAP',
+            rows: [
+              { title: '.lk / .lb', rowId: 'cmd_lklb', description: 'Tambah player ke tim K atau B' },
+              { title: '.list', rowId: 'cmd_list', description: 'Lihat list taruhan tersimpan' },
+              { title: '.resetlist', rowId: 'cmd_resetlist', description: 'Kosongkan list taruhan' },
+              { title: '.c', rowId: 'cmd_c', description: 'Cek TF & saldo player' },
+              { title: '.r', rowId: 'cmd_r', description: 'Rekap total & status' },
+              { title: '.tlk / .klk / .hlk', rowId: 'cmd_editk', description: 'Edit tim K (tambah/kurang/hapus)' },
+              { title: '.tlb / .klb / .hlb', rowId: 'cmd_editb', description: 'Edit tim B (tambah/kurang/hapus)' }
+            ]
+          },
+          {
+            title: '🎠 GESERAN',
+            rows: [
+              { title: '.geseran <jml> <saldo>', rowId: 'cmd_geseran', description: 'Mulai sesi bagi saldo otomatis' },
+              { title: '.stopgeseran', rowId: 'cmd_stopgeseran', description: 'Hentikan sesi geseran' }
+            ]
+          },
+          {
+            title: '🧸 UTILITY',
+            rows: [
+              { title: '.sewa <hari>', rowId: 'cmd_sewa', description: 'Order / info harga sewa bot' },
+              { title: '.cek', rowId: 'cmd_cek', description: 'Cek status sewa aktifmu' },
+              { title: '.predik', rowId: 'cmd_predik', description: 'Prediksi angka dadu 9D' },
+              { title: '.pay', rowId: 'cmd_pay', description: 'Tampilkan info pembayaran QRIS' },
+              { title: '.setpp', rowId: 'cmd_setpp', description: 'Set foto profil grup' },
+              { title: '.o', rowId: 'cmd_o', description: 'Tag semua anggota grup' },
+              { title: '.tourl', rowId: 'cmd_tourl', description: 'Upload media ke URL publik' },
+              { title: '.ping', rowId: 'cmd_ping', description: 'Cek kecepatan respons bot' }
+            ]
+          },
+          {
+            title: '🍬 OWNER & ADMIN',
+            rows: [
+              { title: '.addvip / .delvip', rowId: 'cmd_vip', description: 'Kelola akses VIP user' },
+              { title: '.self / .public', rowId: 'cmd_mode', description: 'Ubah mode bot' },
+              { title: '.kick', rowId: 'cmd_kick', description: 'Keluarkan anggota dari grup' },
+              { title: '.tagall / .hidetag', rowId: 'cmd_tag', description: 'Tag semua (biasa/tersembunyi)' },
+              { title: '.del', rowId: 'cmd_del', description: 'Hapus pesan' },
+              { title: '.setlw', rowId: 'cmd_setlw', description: 'Simpan template LW' },
+              { title: '.totalfitur', rowId: 'cmd_totalfitur', description: 'Lihat jumlah total fitur bot' }
+            ]
+          }
+        ],
+        listType: 1
       };
-      const head = (txt) => ' ' + txt.padEnd(W - 2, ' ') + ' ';
-      const center = (txt) => {
-        const pad = Math.max(0, Math.floor((W - txt.length) / 2));
-        return ' '.repeat(pad) + txt + ' '.repeat(W - txt.length - pad);
-      };
-      const renderSection = (s) => {
-        const head1 = ' ' + s.title.padEnd(W - 2, ' ') + ' ';
-        const head2 = mid;
-        const body = s.items.map(([cmd, desc]) => {
-          const c = ' ' + cmd.padEnd(14, ' ');
-          const d = ' ' + desc;
-          return c + d;
-        }).join('\n');
-        return head1 + '\n' + head2 + '\n' + body;
-      };
-      const header =
-        top + '\n' +
-        head('KB BOT v' + ver) + '\n' +
-        mid + '\n' +
-        row('Version', ver) + '\n' +
-        row('Runtime', uptimeString) + '\n' +
-        row('Mode', mode) + '\n' +
-        row('Features', TOTAL) + '\n' +
-        row('Users', userCount) + '\n' +
-        mid + '\n' +
-        center('DAFTAR PERINTAH') + '\n' +
-        mid;
-      const body = sections.map(renderSection).join('\n' + mid + '\n');
-      const footer = '\n' + top;
-      reply(header + '\n\n' + body + footer);
+
+      try {
+        await sock.sendMessage(m.chat, { listMessage }, { quoted: m });
+      } catch {
+        // Fallback: plain text menu jika listMessage tidak didukung klien
+        const lines = ['```', `KB BOT v${ver}`, `Runtime : ${uptimeString}`, `Mode    : ${mode}`, `Fitur   : ${TOTAL}`, '```', ''];
+        for (const sec of listMessage.sections) {
+          lines.push(`*${sec.title}*`);
+          for (const row of sec.rows) {
+            lines.push(`  ${row.title} — ${row.description}`);
+          }
+          lines.push('');
+        }
+        reply(lines.join('\n'));
+      }
       return true;
     }
+
 
     case 'tes':
     case 'robot':
